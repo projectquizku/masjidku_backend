@@ -1,0 +1,14 @@
+[
+    {
+        "subcategory_news_title": "Apa itu Bab Tauhid?",
+        "subcategory_news_description": "Bab ini membahas pengesaan Allah dan dalil-dalilnya.",
+        "subcategory_news_is_public": true,
+        "subcategory_news_subcategory_id": 1
+    },
+    {
+        "subcategory_news_title": "Fiqh Wudhu",
+        "subcategory_news_description": "Penjelasan tentang tata cara dan syarat sah wudhu.",
+        "subcategory_news_is_public": true,
+        "subcategory_news_subcategory_id": 2
+    }
+]

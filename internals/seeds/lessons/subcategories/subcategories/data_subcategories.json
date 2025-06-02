@@ -1,0 +1,18 @@
+[
+    {
+        "subcategory_name": "Aqidah Praktis",
+        "subcategory_status": "active",
+        "subcategory_description_long": "Subkategori ini mencakup pembelajaran tentang tata cara ibadah dalam Islam, termasuk shalat, puasa, zakat, dan haji.",
+        "subcategory_image_url": "https://example.com/images/fiqh_ibadah.jpg",
+        "subcategory_total_themes_or_levels": [],
+        "subcategory_category_id": 1
+    },
+    {
+        "subcategory_name": "Fiqh Praktis",
+        "subcategory_status": "active",
+        "subcategory_description_long": "Subkategori ini mencakup pembelajaran tentang tata cara ibadah dalam Islam, termasuk shalat, puasa, zakat, dan haji.",
+        "subcategory_image_url": "https://example.com/images/fiqh_ibadah.jpg",
+        "subcategory_total_themes_or_levels": [],
+        "subcategory_category_id": 2
+    }
+]
