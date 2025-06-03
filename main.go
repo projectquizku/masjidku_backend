@@ -6,10 +6,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"masjidku_backend/internals/features/donations/donations/service"
-	scheduler "masjidku_backend/internals/features/users/auth/scheduler"
 	"masjidku_backend/internals/configs"
 	database "masjidku_backend/internals/databases"
+	"masjidku_backend/internals/features/donations/donations/service"
+	scheduler "masjidku_backend/internals/features/users/auth/scheduler"
 	middlewares "masjidku_backend/internals/middlewares"
 	routes "masjidku_backend/internals/route"
 )
@@ -46,5 +46,6 @@ func main() {
 		port = "3000"
 	}
 	log.Printf("✅ Listening on PORT: %s", port)
-	log.Fatal(app.Listen(":" + port))
+	log.Fatal(app.Listen("0.0.0.0:" + port)) // ✅ FIX INI
+
 }
