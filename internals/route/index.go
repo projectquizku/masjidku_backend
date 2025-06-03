@@ -4,9 +4,10 @@ import (
 	"log"
 	"time"
 
+	routeDetails "masjidku_backend/internals/route/details"
+
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
-	routeDetails "masjidku_backend/internals/route/details"
 )
 
 var startTime time.Time
@@ -39,4 +40,8 @@ func SetupRoutes(app *fiber.App, db *gorm.DB) {
 
 	log.Println("[INFO] Setting up ProgressRoutes...")
 	routeDetails.ProgressRoutes(app, db)
-} 
+
+	log.Println("[INFO] Setting up MasjidsRoutes")
+	routeDetails.MasjidRoutes(app, db)
+
+}

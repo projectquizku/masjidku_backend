@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS donations (
     ), 
     donation_payment_token TEXT, 
     donation_payment_gateway VARCHAR(50) DEFAULT 'midtrans',
-    donation_payment_method VARCHAR
+    donation_payment_method VARCHAR,
     donation_paid_at TIMESTAMP, 
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,                       -- Timestamp pembuatan data
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,                       -- Timestamp terakhir kali data diperbarui

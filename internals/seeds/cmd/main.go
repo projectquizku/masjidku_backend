@@ -49,7 +49,7 @@ func main() {
 	case "all":
 		seeds.RunAllSeeds(db)
 	case "users":
-		users.SeedUsersFromJSON(db, "internals/seeds/users/auth/data_users_2.json")
+		users.SeedUsersFromJSON(db, "internals/seeds/users/auth/data_users.json")
 	case "users_profile":
 		userProfiles.SeedUsersProfileFromJSON(db, "internals/seeds/users/users/data_users_profiles.json")
 	case "lessons":

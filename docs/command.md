@@ -7,14 +7,20 @@ muhammadrizkisetyanto@MacBook-Air-Muhammad arabiya-syari-fiber-1 % migrate creat
 # Up-Down migrasi
 Masukan number untuk mengarahkan mau berapa banyak file yang di up/down. Misal 1,2,3 dst
 **UP**
-migrate -path internals/databases/migrations -database "postgresql://postgres.iqtqixqqsubcjbqdmgsw:Wedangjahe217@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres" up
+migrate -path internals/databases/migrations \
+  -database "postgresql://postgres.kkxflcqxkifqhysyijmx:Wedangjahe217@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require" up
 
 **DOWN**
-migrate -path internals/databases/migrations -database "postgresql://postgres.iqtqixqqsubcjbqdmgsw:Wedangjahe217@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres" down
-
+migrate -path internals/databases/migrations \
+  -database "postgresql://postgres.kkxflcqxkifqhysyijmx:Wedangjahe217@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require" down
 
 # Dirty migrasi
-muhammadrizkisetyanto@MacBook-Air-Muhammad arabiya-syari-fiber-1 % migrate -database "postgresql://postgres:qXdMRsMSGEgQvVrLuBjmUAGkytJwsaWk@trolley.proxy.rlwy.net:59123/railway" -path internals/database/migrations force 20250221005048
+PGPASSWORD="Wedangjahe217" psql \
+  -h kkxflcqxkifqhysyijmx.supabase.co \
+  -p 5432 \
+  -U postgres \
+  -d postgres \
+  -w
 
 # Masuk database
 muhammadrizkisetyanto@MacBook-Air-Muhammad arabiya-syari-fiber-1 % PGPASSWORD="qXdMRsMSGEgQvVrLuBjmUAGkytJwsaWk" psql -h trolley.proxy.rlwy.net -p 59123 -U postgres -d railway

@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS themes_or_levels (
 CREATE INDEX IF NOT EXISTS idx_themes_or_level_status ON themes_or_levels(themes_or_level_status);
 CREATE INDEX IF NOT EXISTS idx_themes_or_level_subcategory_id ON themes_or_levels(themes_or_level_subcategory_id);
 CREATE INDEX IF NOT EXISTS idx_themes_or_level_name_subcat ON themes_or_levels(themes_or_level_name, themes_or_level_subcategory_id);
-2
+
 
 -- ✅ TABLE: themes_or_levels_news
 CREATE TABLE IF NOT EXISTS themes_or_levels_news (
