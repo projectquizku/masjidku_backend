@@ -22,5 +22,5 @@ type MasjidProfile struct {
 }
 
 func (MasjidProfile) TableName() string {
-	return "masjid_profiles"
+	return "masjids_profiles"
 }

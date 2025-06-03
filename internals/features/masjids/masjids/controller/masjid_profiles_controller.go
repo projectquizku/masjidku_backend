@@ -62,28 +62,76 @@ func (mpc *MasjidProfileController) GetProfileByMasjidID(c *fiber.Ctx) error {
 }
 
 // 🟢 CREATE PROFILE
+// 🟢 CREATE MASJID PROFILE (Single or Multiple)
 func (mpc *MasjidProfileController) CreateMasjidProfile(c *fiber.Ctx) error {
-	log.Println("[INFO] Received request to create masjid profile")
+	log.Println("[INFO] Received request to create masjid profile(s)")
 
-	// DTO Input
-	var input dto.MasjidProfileRequest
-	if err := c.BodyParser(&input); err != nil {
-		log.Printf("[ERROR] Invalid input: %v\n", err)
+	// Coba baca sebagai array terlebih dahulu
+	var multipleInput []dto.MasjidProfileRequest
+	if err := c.BodyParser(&multipleInput); err == nil && len(multipleInput) > 0 {
+		var insertedProfiles []model.MasjidProfile
+
+		for _, input := range multipleInput {
+			// Validasi UUID
+			masjidUUID, err := uuid.Parse(input.MasjidProfileMasjidID)
+			if err != nil || masjidUUID == uuid.Nil {
+				log.Printf("[SKIP] Masjid ID tidak valid: %v\n", input.MasjidProfileMasjidID)
+				continue
+			}
+
+			// Cek duplikat
+			var existing model.MasjidProfile
+			if err := mpc.DB.
+				Where("masjid_profile_masjid_id = ?", masjidUUID).
+				First(&existing).Error; err == nil {
+				log.Printf("[SKIP] Profil untuk masjid %s sudah ada\n", masjidUUID)
+				continue
+			}
+
+			profile := dto.ToModelMasjidProfile(&input)
+			insertedProfiles = append(insertedProfiles, *profile)
+		}
+
+		if len(insertedProfiles) == 0 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Tidak ada data profil yang valid untuk disimpan",
+			})
+		}
+
+		// Simpan batch
+		if err := mpc.DB.Create(&insertedProfiles).Error; err != nil {
+			log.Printf("[ERROR] Gagal menyimpan banyak profil: %v\n", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Gagal menyimpan banyak profil masjid",
+			})
+		}
+
+		log.Printf("[SUCCESS] %d profil masjid berhasil dibuat\n", len(insertedProfiles))
+		return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+			"message": "Berhasil membuat banyak profil masjid",
+			"count":   len(insertedProfiles),
+		})
+	}
+
+	// Fallback ke single insert
+	var singleInput dto.MasjidProfileRequest
+	if err := c.BodyParser(&singleInput); err != nil {
+		log.Printf("[ERROR] Format input tidak valid: %v\n", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Format input tidak valid",
 		})
 	}
 
-	// Validasi Masjid ID (UUID)
-	masjidUUID, err := uuid.Parse(input.MasjidProfileMasjidID)
+	// Validasi UUID
+	masjidUUID, err := uuid.Parse(singleInput.MasjidProfileMasjidID)
 	if err != nil || masjidUUID == uuid.Nil {
-		log.Printf("[ERROR] Invalid Masjid ID: %v\n", err)
+		log.Printf("[ERROR] Masjid ID tidak valid: %v\n", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Masjid ID tidak valid atau kosong",
 		})
 	}
 
-	// Cek apakah sudah ada profile untuk masjid ini
+	// Cek duplikat
 	var existing model.MasjidProfile
 	if err := mpc.DB.
 		Where("masjid_profile_masjid_id = ?", masjidUUID).
@@ -93,18 +141,15 @@ func (mpc *MasjidProfileController) CreateMasjidProfile(c *fiber.Ctx) error {
 		})
 	}
 
-	// Konversi ke model
-	profile := dto.ToModelMasjidProfile(&input)
-
-	// Simpan ke DB
+	profile := dto.ToModelMasjidProfile(&singleInput)
 	if err := mpc.DB.Create(&profile).Error; err != nil {
-		log.Printf("[ERROR] Failed to create masjid profile: %v\n", err)
+		log.Printf("[ERROR] Gagal menyimpan profil: %v\n", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Gagal menyimpan profil masjid",
 		})
 	}
 
-	log.Printf("[SUCCESS] Masjid profile created for masjid ID: %s\n", masjidUUID)
+	log.Printf("[SUCCESS] Profil masjid berhasil dibuat untuk masjid ID: %s\n", masjidUUID)
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "Profil masjid berhasil dibuat",
 		"data":    dto.FromModelMasjidProfile(profile),

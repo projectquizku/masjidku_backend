@@ -5,6 +5,8 @@ import (
 	rateLimiter "masjidku_backend/internals/middlewares"
 	authMiddleware "masjidku_backend/internals/middlewares/auth"
 
+	userFollowMasjid "masjidku_backend/internals/features/masjids/user_follow_masjids/route"
+
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
@@ -22,5 +24,6 @@ func MasjidRoutes(app *fiber.App, db *gorm.DB) {
 	// Group untuk user/public: /api/u/...
 	userGroup := api.Group("/u")
 	masjidRoutes.MasjidUserRoutes(userGroup, db)
+	userFollowMasjid.UserFollowMasjidsRoutes(userGroup, db)
 
 }
