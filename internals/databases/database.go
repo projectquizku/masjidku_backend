@@ -12,8 +12,9 @@ import (
 var DB *gorm.DB
 
 func ConnectDB() {
+	fmt.Println("🔌 Memulai koneksi ke Supabase PostgreSQL...")
 
-	// 🔐 Ambil dari .env
+	// Bangun DSN
 	dsn := fmt.Sprintf(
 		"user=%s password=%s host=%s port=%s dbname=%s sslmode=%s",
 		os.Getenv("DB_USER"),
@@ -23,6 +24,7 @@ func ConnectDB() {
 		os.Getenv("DB_NAME"),
 		os.Getenv("DB_SSLMODE"),
 	)
+	fmt.Println("🔍 DSN:", dsn)
 
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		DSN:                  dsn,
@@ -30,9 +32,9 @@ func ConnectDB() {
 	}), &gorm.Config{})
 
 	if err != nil {
-		log.Fatal("❌ Gagal koneksi ke Supabase:", err)
+		log.Fatalf("❌ Gagal koneksi ke Supabase:\n%v", err)
 	}
 
 	DB = db
-	fmt.Println("🚀 Berhasil konek ke Supabase PostgreSQL sekarang!")
+	fmt.Println("✅ Berhasil konek ke Supabase PostgreSQL sekarang!")
 }
