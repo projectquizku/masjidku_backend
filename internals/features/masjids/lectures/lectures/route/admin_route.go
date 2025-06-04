@@ -7,14 +7,23 @@ import (
 	"gorm.io/gorm"
 )
 
-func LectureRoutes(router fiber.Router, db *gorm.DB) {
-	ctrl := controller.LectureController{DB: db}
+func LectureRoutes(api fiber.Router, db *gorm.DB) {
+	// 🔹 Lectures
+	lectureCtrl := controller.NewLectureController(db)
+	lecture := api.Group("/lectures")
+	lecture.Post("/", lectureCtrl.CreateLecture)
+	lecture.Post("/by-masjid", lectureCtrl.GetLecturesByMasjid)
 
-	router.Post("/lectures", ctrl.CreateLecture)
-	router.Get("/lectures", ctrl.GetLecturesByMasjid)
+	// 🔹 User Lectures
+	userLectureCtrl := controller.NewUserLectureController(db)
+	userLecture := api.Group("/user-lectures")
+	userLecture.Post("/", userLectureCtrl.CreateUserLecture)
+	userLecture.Post("/by-lecture", userLectureCtrl.GetUsersByLecture)
 
-	ctrl2 := controller.UserLectureController{DB: db}
-
-	router.Post("/user-lectures", ctrl2.CreateUserLecture)
-	router.Get("/user-lectures", ctrl2.GetUsersByLecture)
+	// 🔹 Lecture Stats
+	statsCtrl := controller.NewLectureStatsController(db)
+	stats := api.Group("/lecture-stats")
+	stats.Post("/", statsCtrl.CreateLectureStats)
+	stats.Get("/:lectureId", statsCtrl.GetLectureStatsByLectureID)
+	stats.Put("/:lectureId", statsCtrl.UpdateLectureStats)
 }

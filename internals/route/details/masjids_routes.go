@@ -1,12 +1,19 @@
 package details
 
 import (
+	FaqRoutes "masjidku_backend/internals/features/home/faqs/route"
+	NotificationRoutes "masjidku_backend/internals/features/home/notifications/route"
+	LectureSessionRoutes "masjidku_backend/internals/features/masjids/lecture_sessions/lecture_sessions/route"
+	LectureSessionsExamsRoutes "masjidku_backend/internals/features/masjids/lecture_sessions/lecture_sessions_exams/route"
+	LectureSessionsAssetRoutes "masjidku_backend/internals/features/masjids/lecture_sessions/lecture_sessions_materials/route"
+	LectureSessionsQuestionRoutes "masjidku_backend/internals/features/masjids/lecture_sessions/lecture_sessions_questions/route"
+	EventRoutes "masjidku_backend/internals/features/masjids/lectures/events/route"
+	LectureRoutes "masjidku_backend/internals/features/masjids/lectures/lectures/route"
+	MasjidAdmin "masjidku_backend/internals/features/masjids/masjid_admins/route"
 	masjidRoutes "masjidku_backend/internals/features/masjids/masjids/route"
+	MasjidMore "masjidku_backend/internals/features/masjids/masjids_more/route"
 	rateLimiter "masjidku_backend/internals/middlewares"
 	authMiddleware "masjidku_backend/internals/middlewares/auth"
-	MasjidAdmin "masjidku_backend/internals/features/masjids/masjid_admins/route"
-	MasjidMore "masjidku_backend/internals/features/masjids/masjids_more/route"
-	LectureRoutes "masjidku_backend/internals/features/masjids/lectures/lectures/route"
 
 	userFollowMasjid "masjidku_backend/internals/features/masjids/user_follow_masjids/route"
 
@@ -26,10 +33,22 @@ func MasjidRoutes(app *fiber.App, db *gorm.DB) {
 	MasjidAdmin.MasjidAdminRoutes(adminGroup, db)
 	MasjidMore.MasjidMoreRoutes(adminGroup, db)
 	LectureRoutes.LectureRoutes(adminGroup, db)
+	EventRoutes.EventRoutes(adminGroup, db)
+	NotificationRoutes.NotificationRoutes(adminGroup, db)
+	FaqRoutes.FaqQuestionAdminRoutes(adminGroup, db)
+	LectureSessionRoutes.LectureSessionAdminRoutes(adminGroup, db)
+	LectureSessionsExamsRoutes.LectureSessionsExamsAdminRoutes(adminGroup, db)
+	LectureSessionsAssetRoutes.LectureSessionsAssetAdminRoutes(adminGroup, db)
+	LectureSessionsQuestionRoutes.LectureSessionsQuestionAdminRoutes(adminGroup, db)
 
 	// Group untuk user/public: /api/u/...
 	userGroup := api.Group("/u")
 	masjidRoutes.MasjidUserRoutes(userGroup, db)
 	userFollowMasjid.UserFollowMasjidsRoutes(userGroup, db)
+	FaqRoutes.FaqQuestionUserRoutes(userGroup, db)
+	LectureSessionRoutes.LectureSessionUserRoutes(userGroup, db)
+	LectureSessionsExamsRoutes.LectureSessionsExamsUserRoutes(userGroup, db)
+	LectureSessionsAssetRoutes.LectureSessionsAssetUserRoutes(userGroup, db)
+	LectureSessionsQuestionRoutes.LectureSessionsQuestionUserRoutes(userGroup, db)
 
 }

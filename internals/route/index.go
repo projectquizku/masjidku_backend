@@ -23,7 +23,6 @@ func SetupRoutes(app *fiber.App, db *gorm.DB) {
 	log.Println("[INFO] Setting up UserRoutes...")
 	routeDetails.UserRoutes(app, db)
 
-
 	log.Println("[INFO] Setting up UtilsRoutes...")
 	routeDetails.UtilsRoutes(app, db)
 
@@ -32,5 +31,8 @@ func SetupRoutes(app *fiber.App, db *gorm.DB) {
 
 	log.Println("[INFO] Setting up MasjidsRoutes")
 	routeDetails.MasjidRoutes(app, db)
+
+	log.Println("[INFO] Setting up HomeRoutes...")
+	routeDetails.HomeRoutes(app, db)
 
 }

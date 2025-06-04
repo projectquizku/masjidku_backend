@@ -17,7 +17,6 @@ func NewUserLectureController(db *gorm.DB) *UserLectureController {
 }
 
 // 🟢 POST /api/a/user-lectures
-// 🟢 POST /api/a/user-lectures
 func (ctrl *UserLectureController) CreateUserLecture(c *fiber.Ctx) error {
 	var req dto.UserLectureRequest
 	if err := c.BodyParser(&req); err != nil {
