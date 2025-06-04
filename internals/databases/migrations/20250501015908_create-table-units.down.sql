@@ -1,3 +1,0 @@
-DROP TABLE IF EXISTS units_news;
-DROP TABLE IF EXISTS user_unit;
-DROP TABLE IF EXISTS units;

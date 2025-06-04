@@ -34,7 +34,7 @@ func (mpc *MasjidProfileController) GetProfileByMasjidID(c *fiber.Ctx) error {
 		})
 	}
 
-	var profile model.MasjidProfile
+	var profile model.MasjidProfileModel
 	err = mpc.DB.
 		Preload("Masjid"). // preload relasi opsional
 		Where("masjid_profile_masjid_id = ?", masjidUUID).
@@ -69,7 +69,7 @@ func (mpc *MasjidProfileController) CreateMasjidProfile(c *fiber.Ctx) error {
 	// Coba baca sebagai array terlebih dahulu
 	var multipleInput []dto.MasjidProfileRequest
 	if err := c.BodyParser(&multipleInput); err == nil && len(multipleInput) > 0 {
-		var insertedProfiles []model.MasjidProfile
+		var insertedProfiles []model.MasjidProfileModel
 
 		for _, input := range multipleInput {
 			// Validasi UUID
@@ -80,7 +80,7 @@ func (mpc *MasjidProfileController) CreateMasjidProfile(c *fiber.Ctx) error {
 			}
 
 			// Cek duplikat
-			var existing model.MasjidProfile
+			var existing model.MasjidProfileModel
 			if err := mpc.DB.
 				Where("masjid_profile_masjid_id = ?", masjidUUID).
 				First(&existing).Error; err == nil {
@@ -132,7 +132,7 @@ func (mpc *MasjidProfileController) CreateMasjidProfile(c *fiber.Ctx) error {
 	}
 
 	// Cek duplikat
-	var existing model.MasjidProfile
+	var existing model.MasjidProfileModel
 	if err := mpc.DB.
 		Where("masjid_profile_masjid_id = ?", masjidUUID).
 		First(&existing).Error; err == nil {
@@ -162,7 +162,7 @@ func (mpc *MasjidProfileController) UpdateMasjidProfile(c *fiber.Ctx) error {
 	log.Printf("[INFO] Updating profile for masjid ID: %s\n", masjidID)
 
 	// Ambil data lama dari DB
-	var existing model.MasjidProfile
+	var existing model.MasjidProfileModel
 	if err := mpc.DB.Where("masjid_profile_masjid_id = ?", masjidID).First(&existing).Error; err != nil {
 		log.Printf("[ERROR] Masjid profile not found: %s\n", masjidID)
 		return c.Status(404).JSON(fiber.Map{
@@ -205,7 +205,7 @@ func (mpc *MasjidProfileController) DeleteMasjidProfile(c *fiber.Ctx) error {
 	log.Printf("[INFO] Deleting profile for masjid ID: %s\n", masjidID)
 
 	if err := mpc.DB.Where("masjid_profile_masjid_id = ?", masjidID).
-		Delete(&model.MasjidProfile{}).Error; err != nil {
+		Delete(&model.MasjidProfileModel{}).Error; err != nil {
 		log.Printf("[ERROR] Failed to delete masjid profile: %v\n", err)
 		return c.Status(500).JSON(fiber.Map{
 			"error": "Gagal menghapus profil masjid",

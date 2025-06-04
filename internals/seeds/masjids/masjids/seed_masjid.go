@@ -41,13 +41,13 @@ func SeedMasjidsFromJSON(db *gorm.DB, filePath string) {
 	}
 
 	for _, m := range masjids {
-		var existing model.Masjid
+		var existing model.MasjidModel
 		if err := db.Where("masjid_slug = ?", m.MasjidSlug).First(&existing).Error; err == nil {
 			log.Printf("ℹ️ Masjid dengan slug %s sudah ada, lewati...", m.MasjidSlug)
 			continue
 		}
 
-		newMasjid := model.Masjid{
+		newMasjid := model.MasjidModel{
 			MasjidID:           uuid.New(),
 			MasjidName:         m.MasjidName,
 			MasjidBioShort:     m.MasjidBioShort,

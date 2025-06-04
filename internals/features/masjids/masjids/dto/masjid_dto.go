@@ -41,7 +41,7 @@ type MasjidResponse struct {
 }
 
 // 🔁 Konversi dari Model ke Response DTO
-func FromModelMasjid(m *model.Masjid) MasjidResponse {
+func FromModelMasjid(m *model.MasjidModel) MasjidResponse {
 	return MasjidResponse{
 		MasjidID:           m.MasjidID.String(),
 		MasjidName:         m.MasjidName,
@@ -61,8 +61,8 @@ func FromModelMasjid(m *model.Masjid) MasjidResponse {
 }
 
 // 🔁 Konversi dari Request DTO ke Model (untuk insert/update)
-func ToModelMasjid(input *MasjidRequest, masjidID uuid.UUID) *model.Masjid {
-	return &model.Masjid{
+func ToModelMasjid(input *MasjidRequest, masjidID uuid.UUID) *model.MasjidModel {
+	return &model.MasjidModel{
 		MasjidID:           masjidID,
 		MasjidName:         input.MasjidName,
 		MasjidBioShort:     input.MasjidBioShort,

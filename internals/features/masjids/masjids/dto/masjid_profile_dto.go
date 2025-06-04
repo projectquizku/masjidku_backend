@@ -28,7 +28,7 @@ type MasjidProfileResponse struct {
 }
 
 // 🔁 Konversi dari Model ke DTO Response
-func FromModelMasjidProfile(profile *model.MasjidProfile) MasjidProfileResponse {
+func FromModelMasjidProfile(profile *model.MasjidProfileModel) MasjidProfileResponse {
 	return MasjidProfileResponse{
 		MasjidProfileID:          profile.MasjidProfileID,
 		MasjidProfileStory:       profile.MasjidProfileStory,
@@ -42,9 +42,9 @@ func FromModelMasjidProfile(profile *model.MasjidProfile) MasjidProfileResponse 
 }
 
 // 🔁 Konversi dari DTO Request ke Model
-func ToModelMasjidProfile(input *MasjidProfileRequest) *model.MasjidProfile {
+func ToModelMasjidProfile(input *MasjidProfileRequest) *model.MasjidProfileModel {
 	parsedUUID, _ := uuid.Parse(input.MasjidProfileMasjidID)
-	return &model.MasjidProfile{
+	return &model.MasjidProfileModel{
 		MasjidProfileStory:       input.MasjidProfileStory,
 		MasjidProfileVisi:        input.MasjidProfileVisi,
 		MasjidProfileMisi:        input.MasjidProfileMisi,

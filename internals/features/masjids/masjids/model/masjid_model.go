@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type Masjid struct {
+type MasjidModel struct {
 	MasjidID           uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"masjid_id"`
 	MasjidName         string         `gorm:"type:varchar(100);not null" json:"masjid_name"`
 	MasjidBioShort     string         `gorm:"type:text" json:"masjid_bio_short"`
@@ -25,6 +25,6 @@ type Masjid struct {
 	MasjidDeletedAt    gorm.DeletedAt `gorm:"column:masjid_deleted_at" json:"masjid_deleted_at,omitempty"`
 }
 
-func (Masjid) TableName() string {
+func (MasjidModel) TableName() string {
 	return "masjids"
 }

@@ -25,7 +25,7 @@ func NewMasjidController(db *gorm.DB) *MasjidController {
 func (mc *MasjidController) GetAllMasjids(c *fiber.Ctx) error {
 	log.Println("[INFO] Fetching all masjids")
 
-	var masjids []model.Masjid
+	var masjids []model.MasjidModel
 	if err := mc.DB.Find(&masjids).Error; err != nil {
 		log.Printf("[ERROR] Failed to fetch masjids: %v\n", err)
 		return c.Status(500).JSON(fiber.Map{
@@ -53,7 +53,7 @@ func (mc *MasjidController) GetMasjidBySlug(c *fiber.Ctx) error {
 	slug := c.Params("slug")
 	log.Printf("[INFO] Fetching masjid with slug: %s\n", slug)
 
-	var masjid model.Masjid
+	var masjid model.MasjidModel
 	if err := mc.DB.Where("masjid_slug = ?", slug).First(&masjid).Error; err != nil {
 		log.Printf("[ERROR] Masjid with slug %s not found\n", slug)
 		return c.Status(404).JSON(fiber.Map{
@@ -81,7 +81,7 @@ func (mc *MasjidController) CreateMasjid(c *fiber.Ctx) error {
 
 	// 🌀 Multiple insert
 	if err := c.BodyParser(&multipleReq); err == nil && len(multipleReq) > 0 {
-		var multipleModels []model.Masjid
+		var multipleModels []model.MasjidModel
 		for _, req := range multipleReq {
 			m := dto.ToModelMasjid(&req, uuid.New())
 			multipleModels = append(multipleModels, *m)
@@ -147,7 +147,7 @@ func (mc *MasjidController) UpdateMasjid(c *fiber.Ctx) error {
 		})
 	}
 
-	var existing model.Masjid
+	var existing model.MasjidModel
 	if err := mc.DB.First(&existing, "masjid_id = ?", masjidUUID).Error; err != nil {
 		log.Printf("[ERROR] Masjid with ID %s not found\n", id)
 		return c.Status(404).JSON(fiber.Map{
@@ -188,7 +188,7 @@ func (mc *MasjidController) DeleteMasjid(c *fiber.Ctx) error {
 	id := c.Params("id")
 	log.Printf("[INFO] Deleting masjid with ID: %s\n", id)
 
-	if err := mc.DB.Delete(&model.Masjid{}, "masjid_id = ?", id).Error; err != nil {
+	if err := mc.DB.Delete(&model.MasjidModel{}, "masjid_id = ?", id).Error; err != nil {
 		log.Printf("[ERROR] Failed to delete masjid: %v\n", err)
 		return c.Status(500).JSON(fiber.Map{
 			"error": "Gagal menghapus masjid",

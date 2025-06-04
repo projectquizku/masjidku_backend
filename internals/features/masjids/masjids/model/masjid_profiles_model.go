@@ -7,7 +7,7 @@ import (
 
 )
 
-type MasjidProfile struct {
+type MasjidProfileModel struct {
 	MasjidProfileID          uint       `gorm:"primaryKey;column:masjid_profile_id" json:"masjid_profile_id"`
 	MasjidProfileStory       string     `gorm:"type:text;column:masjid_profile_story" json:"masjid_profile_story"`
 	MasjidProfileVisi        string     `gorm:"type:text;column:masjid_profile_visi" json:"masjid_profile_visi"`
@@ -21,6 +21,6 @@ type MasjidProfile struct {
 
 }
 
-func (MasjidProfile) TableName() string {
+func (MasjidProfileModel) TableName() string {
 	return "masjids_profiles"
 }
