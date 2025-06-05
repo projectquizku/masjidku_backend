@@ -8,14 +8,16 @@ import (
 )
 
 func FaqQuestionUserRoutes(user fiber.Router, db *gorm.DB) {
-	ctrl := controller.NewFaqQuestionController(db)
+	faqQuestionCtrl := controller.NewFaqQuestionController(db)
+	faqAnswerCtrl := controller.NewFaqAnswerController(db)
 
-	user.Post("/faq-questions", ctrl.CreateFaqQuestion)     // ✅ Kirim pertanyaan
-	user.Get("/faq-questions", ctrl.GetAllFaqQuestions)     // ✅ Lihat semua (bisa difilter nanti per user ID)
-	user.Get("/faq-questions/:id", ctrl.GetFaqQuestionByID) // ✅ Detail pertanyaan
+	// Group: /faq-questions
+	faqQuestion := user.Group("/faq-questions")
+	faqQuestion.Post("/", faqQuestionCtrl.CreateFaqQuestion)    // ➕ Kirim pertanyaan
+	faqQuestion.Get("/", faqQuestionCtrl.GetAllFaqQuestions)    // 📄 Semua pertanyaan (bisa difilter per user ID)
+	faqQuestion.Get("/:id", faqQuestionCtrl.GetFaqQuestionByID) // 🔍 Detail pertanyaan
 
-	ctrl2 := controller.NewFaqAnswerController(db)
-
-	user.Get("/faq-answers/:id", ctrl2.GetFaqAnswerByID) // ✅ Lihat jawaban untuk pertanyaan tertentu
-
+	// Group: /faq-answers
+	faqAnswer := user.Group("/faq-answers")
+	faqAnswer.Get("/:id", faqAnswerCtrl.GetFaqAnswerByID) // 🔍 Jawaban dari pertanyaan tertentu
 }

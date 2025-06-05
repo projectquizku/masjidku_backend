@@ -7,13 +7,12 @@ import (
 	"gorm.io/gorm"
 )
 
-func UserFollowMasjidsRoutes(api fiber.Router, db *gorm.DB) {
+func UserFollowMasjidsRoutes(user fiber.Router, db *gorm.DB) {
 	ctrl := controller.NewUserFollowMasjidController(db)
 
-	// 🟢 User follow dan unfollow masjid
-	api.Post("/user-follow-masjids/follow", ctrl.FollowMasjid)
-	api.Delete("/user-follow-masjids/unfollow", ctrl.UnfollowMasjid)
-
-	// 🟢 Get daftar masjid yang di-follow oleh user
-	api.Get("/user-follow-masjids/followed", ctrl.GetFollowedMasjidsByUser) // Ambil dari body atau query
+	// 🤝 Group: /user-follow-masjids
+	follow := user.Group("/user-follow-masjids")
+	follow.Post("/follow", ctrl.FollowMasjid)              // ➕ Follow masjid
+	follow.Delete("/unfollow", ctrl.UnfollowMasjid)        // ❌ Unfollow masjid
+	follow.Get("/followed", ctrl.GetFollowedMasjidsByUser) // 📄 Lihat daftar masjid yang di-follow
 }

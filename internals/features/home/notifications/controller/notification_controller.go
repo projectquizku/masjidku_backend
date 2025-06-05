@@ -79,3 +79,20 @@ func (ctrl *NotificationController) GetAllNotifications(c *fiber.Ctx) error {
 		"data":    dto.ToNotificationResponseList(notifs),
 	})
 }
+
+// 🟢 GET /api/u/notifications
+func (ctrl *NotificationController) GetAllNotificationsForUser(c *fiber.Ctx) error {
+	var notifs []model.NotificationModel
+	if err := ctrl.DB.Order("notification_created_at desc").Find(&notifs).Error; err != nil {
+		log.Printf("[ERROR] Gagal mengambil notifikasi untuk user: %v", err)
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Gagal mengambil notifikasi",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Berhasil mengambil notifikasi untuk user",
+		"data":    dto.ToNotificationResponseList(notifs),
+	})
+}

@@ -7,18 +7,19 @@ import (
 	"gorm.io/gorm"
 )
 
-func MasjidAdminRoutes(api fiber.Router, db *gorm.DB) {
-	ctrl := controller.NewMasjidController(db)
+func MasjidAdminRoutes(admin fiber.Router, db *gorm.DB) {
+	masjidCtrl := controller.NewMasjidController(db)
+	profileCtrl := controller.NewMasjidProfileController(db)
 
-	// Hanya admin yang bisa melakukan ini:
-	api.Post("/masjids", ctrl.CreateMasjid)
-	api.Put("/masjids/:id", ctrl.UpdateMasjid)
-	api.Delete("/masjids/:id", ctrl.DeleteMasjid)
+	// 🕌 Group: /masjids
+	masjid := admin.Group("/masjids")
+	masjid.Post("/", masjidCtrl.CreateMasjid)      // ➕ Buat masjid
+	masjid.Put("/:id", masjidCtrl.UpdateMasjid)    // ✏️ Edit masjid
+	masjid.Delete("/:id", masjidCtrl.DeleteMasjid) // ❌ Hapus masjid
 
-	ctrl2 := controller.NewMasjidProfileController(db)
-
-	// Hanya admin yang bisa melakukan ini:
-	api.Post("/masjid-profiles", ctrl2.CreateMasjidProfile)
-	api.Put("/masjid-profiles/:id", ctrl2.UpdateMasjidProfile)
-	api.Delete("/masjid-profiles/:id", ctrl2.DeleteMasjidProfile)
+	// 📄 Group: /masjid-profiles
+	profile := admin.Group("/masjid-profiles")
+	profile.Post("/", profileCtrl.CreateMasjidProfile)      // ➕ Buat profil masjid
+	profile.Put("/:id", profileCtrl.UpdateMasjidProfile)    // ✏️ Edit profil masjid
+	profile.Delete("/:id", profileCtrl.DeleteMasjidProfile) // ❌ Hapus profil
 }

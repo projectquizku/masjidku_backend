@@ -5,9 +5,9 @@ import (
 	ArticleRoutes "masjidku_backend/internals/features/home/articles/route"
 	FaqRoutes "masjidku_backend/internals/features/home/faqs/route"
 	NotificationRoutes "masjidku_backend/internals/features/home/notifications/route"
-	PostLikeRoutes "masjidku_backend/internals/features/home/posts/route"
 	PostRoutes "masjidku_backend/internals/features/home/posts/route"
 	QouteRoutes "masjidku_backend/internals/features/home/qoutes/route"
+	QuestionnaireRoutes "masjidku_backend/internals/features/home/questionnaires/route"
 	rateLimiter "masjidku_backend/internals/middlewares"
 	authMiddleware "masjidku_backend/internals/middlewares/auth"
 
@@ -30,14 +30,15 @@ func HomeRoutes(app *fiber.App, db *gorm.DB) {
 	ArticleRoutes.ArticleAdminRoutes(adminGroup, db)
 	QouteRoutes.QuoteAdminRoutes(adminGroup, db)
 	PostRoutes.PostAdminRoutes(adminGroup, db)
+	QuestionnaireRoutes.QuestionnaireQuestionAdminRoutes(adminGroup, db)
 	// Group untuk user/public: /api/u/...
 
 	adminGroup = api.Group("/u")
-	// NotificationRoutes.NotificationRoutes(adminGroup, db)
+	NotificationRoutes.NotificationUserRoutes(adminGroup, db)
 	FaqRoutes.FaqQuestionUserRoutes(adminGroup, db)
 	AdviceRoutes.AdviceUserRoutes(adminGroup, db)
 	ArticleRoutes.ArticleUserRoutes(adminGroup, db)
 	QouteRoutes.QuoteUserRoutes(adminGroup, db)
 	PostRoutes.PostUserRoutes(adminGroup, db)
-	PostLikeRoutes.PostUserRoutes(adminGroup, db)
+	QuestionnaireRoutes.QuestionnaireQuestionUserRoutes(adminGroup, db)
 }

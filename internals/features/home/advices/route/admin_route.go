@@ -11,7 +11,7 @@ func AdviceAdminRoutes(api fiber.Router, db *gorm.DB) {
 	adviceCtrl := controller.NewAdviceController(db)
 
 	// === ADMIN ROUTES ===
-	admin := api.Group("/admin/advices")
+	admin := api.Group("/advices")
 	admin.Get("/", adviceCtrl.GetAllAdvices)                              // 📄 Admin lihat semua
 	admin.Get("/by-lecture/:lectureId", adviceCtrl.GetAdvicesByLectureID) // 🔍 Filter berdasarkan kajian
 	admin.Get("/by-user/:userId", adviceCtrl.GetAdvicesByUserID)          // 🔍 Filter berdasarkan user

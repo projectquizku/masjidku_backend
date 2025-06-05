@@ -2,7 +2,7 @@ package model
 
 import (
 	LectureModel "masjidku_backend/internals/features/masjids/lectures/lectures/model"
-	LectureSessionModel "masjidku_backend/internals/features/masjids/lecture_sessions/lecture_sessions/model"
+	LectureSessionModel "masjidku_backend/internals/features/masjids/lecture_sessions/main/model"
 	UserModel "masjidku_backend/internals/features/users/user/model"
 	"time"
 )

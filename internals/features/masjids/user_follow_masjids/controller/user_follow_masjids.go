@@ -41,7 +41,7 @@ func (ctrl *UserFollowMasjidController) FollowMasjid(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "UUID user atau masjid tidak valid"})
 	}
 
-	follow := model.UserFollowMasjid{
+	follow := model.UserFollowMasjidModel{
 		FollowUserID:    userUUID,
 		FollowMasjidID:  masjidUUID,
 		FollowCreatedAt: time.Now(),
@@ -87,7 +87,7 @@ func (ctrl *UserFollowMasjidController) UnfollowMasjid(c *fiber.Ctx) error {
 
 	// Delete record follow
 	if err := ctrl.DB.Delete(
-		&model.UserFollowMasjid{},
+		&model.UserFollowMasjidModel{},
 		"follow_user_id = ? AND follow_masjid_id = ?", userUUID, masjidUUID,
 	).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -112,7 +112,7 @@ func (ctrl *UserFollowMasjidController) GetFollowedMasjidsByUser(c *fiber.Ctx) e
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "User ID tidak valid"})
 	}
 
-	var follows []model.UserFollowMasjid
+	var follows []model.UserFollowMasjidModel
 	if err := ctrl.DB.Where("follow_user_id = ?", userUUID).Find(&follows).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Gagal ambil daftar masjid yg di-follow"})
 	}

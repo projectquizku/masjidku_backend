@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"log"
 	"masjidku_backend/internals/features/home/advices/dto"
 	"masjidku_backend/internals/features/home/advices/model"
 
@@ -55,6 +56,7 @@ func (ctrl *AdviceController) CreateAdvice(c *fiber.Ctx) error {
 // 📄 Get All Advices
 // =======================
 func (ctrl *AdviceController) GetAllAdvices(c *fiber.Ctx) error {
+	log.Println("GetAllAdvices")
 	var advices []model.AdviceModel
 	if err := ctrl.DB.Find(&advices).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve advices")

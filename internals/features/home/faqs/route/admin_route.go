@@ -8,17 +8,20 @@ import (
 )
 
 func FaqQuestionAdminRoutes(admin fiber.Router, db *gorm.DB) {
-	ctrl := controller.NewFaqQuestionController(db)
+	faqQuestionCtrl := controller.NewFaqQuestionController(db)
+	faqAnswerCtrl := controller.NewFaqAnswerController(db)
 
-	admin.Get("/faq-questions", ctrl.GetAllFaqQuestions)       // ✅ Lihat semua pertanyaan
-	admin.Get("/faq-questions/:id", ctrl.GetFaqQuestionByID)   // ✅ Detail pertanyaan
-	admin.Put("/faq-questions/:id", ctrl.UpdateFaqQuestion)    // ✅ Tandai sebagai dijawab / edit
-	admin.Delete("/faq-questions/:id", ctrl.DeleteFaqQuestion) // ✅ Hapus pertanyaan
+	// Group: /faq-questions
+	faqQuestion := admin.Group("/faq-questions")
+	faqQuestion.Get("/", faqQuestionCtrl.GetAllFaqQuestions)      // 📄 Semua pertanyaan
+	faqQuestion.Get("/:id", faqQuestionCtrl.GetFaqQuestionByID)   // 🔍 Detail pertanyaan
+	faqQuestion.Put("/:id", faqQuestionCtrl.UpdateFaqQuestion)    // ✏️ Edit pertanyaan
+	faqQuestion.Delete("/:id", faqQuestionCtrl.DeleteFaqQuestion) // ❌ Hapus pertanyaan
 
-	ctrl2 := controller.NewFaqAnswerController(db)
-
-	admin.Post("/faq-answers", ctrl2.CreateFaqAnswer)       // ✅ Admin menjawab pertanyaan
-	admin.Put("/faq-answers/:id", ctrl2.UpdateFaqAnswer)    // ✅ Edit jawaban
-	admin.Delete("/faq-answers/:id", ctrl2.DeleteFaqAnswer) // ✅ Hapus jawaban
-	admin.Get("/faq-answers/:id", ctrl2.GetFaqAnswerByID)   // ✅ Lihat detail jawaban
+	// Group: /faq-answers
+	faqAnswer := admin.Group("/faq-answers")
+	faqAnswer.Post("/", faqAnswerCtrl.CreateFaqAnswer)      // ➕ Tambah jawaban
+	faqAnswer.Get("/:id", faqAnswerCtrl.GetFaqAnswerByID)   // 🔍 Detail jawaban
+	faqAnswer.Put("/:id", faqAnswerCtrl.UpdateFaqAnswer)    // ✏️ Edit jawaban
+	faqAnswer.Delete("/:id", faqAnswerCtrl.DeleteFaqAnswer) // ❌ Hapus jawaban
 }

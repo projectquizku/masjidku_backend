@@ -7,15 +7,16 @@ import (
 	"gorm.io/gorm"
 )
 
-func MasjidUserRoutes(api fiber.Router, db *gorm.DB) {
-	ctrl := controller.NewMasjidController(db)
+func MasjidUserRoutes(user fiber.Router, db *gorm.DB) {
+	masjidCtrl := controller.NewMasjidController(db)
+	profileCtrl := controller.NewMasjidProfileController(db)
 
-	// User & publik bisa akses ini
-	api.Get("/masjids", ctrl.GetAllMasjids)
-	api.Get("/masjids/:slug", ctrl.GetMasjidBySlug)
+	// 🕌 Group: /masjids
+	masjid := user.Group("/masjids")
+	masjid.Get("/", masjidCtrl.GetAllMasjids)        // 📄 Semua masjid
+	masjid.Get("/:slug", masjidCtrl.GetMasjidBySlug) // 🔍 Detail by slug
 
-	ctrl2 := controller.NewMasjidProfileController(db)
-
-	// User & publik bisa akses ini
-	api.Get("/masjid-profiles", ctrl2.GetProfileByMasjidID)
+	// 📄 Group: /masjid-profiles
+	profile := user.Group("/masjid-profiles")
+	profile.Get("/", profileCtrl.GetProfileByMasjidID) // 🔍 Profil masjid by masjid_id
 }

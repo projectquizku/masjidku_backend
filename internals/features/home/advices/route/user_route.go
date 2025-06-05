@@ -12,7 +12,6 @@ func AdviceUserRoutes(api fiber.Router, db *gorm.DB) {
 
 	user := api.Group("/advices")
 	user.Post("/", adviceCtrl.CreateAdvice)
-	user.Get("/", adviceCtrl.GetAllAdvices)
 	user.Get("/by-lecture/:lectureId", adviceCtrl.GetAdvicesByLectureID)
 	user.Get("/by-user/:userId", adviceCtrl.GetAdvicesByUserID)
 }

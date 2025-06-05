@@ -1,8 +1,7 @@
 package details
 
 import (
-	donationQuestionAdminRoutes "masjidku_backend/internals/features/donations/donation_questions/route"
-	donationQuestionUserRoutes "masjidku_backend/internals/features/donations/donation_questions/route"
+	donationQuestionRoutes "masjidku_backend/internals/features/donations/donation_questions/route"
 	donationController "masjidku_backend/internals/features/donations/donations/controller"
 	donationRoutes "masjidku_backend/internals/features/donations/donations/routes"
 	rateLimiter "masjidku_backend/internals/middlewares"
@@ -22,11 +21,11 @@ func DonationRoutes(app *fiber.App, db *gorm.DB) {
 	// 👤 Route untuk user biasa (/api/u)
 	userGroup := api.Group("/u")
 	donationRoutes.DonationRoutes(userGroup, db) // data donasi user
-	donationQuestionUserRoutes.DonationQuestionUserRoutes(userGroup.Group("/donation-questions"), db)
+	donationQuestionRoutes.DonationQuestionUserRoutes(userGroup.Group("/donation-questions"), db)
 
 	// 🔐 Route untuk admin/owner (/api/a)
 	adminGroup := api.Group("/a")
-	donationQuestionAdminRoutes.DonationQuestionAdminRoutes(adminGroup.Group("/donation-questions"), db)
+	donationQuestionRoutes.DonationQuestionAdminRoutes(adminGroup.Group("/donation-questions"), db)
 
 	// 🔓 Webhook dari Midtrans (tidak pakai middleware)
 	app.Post("/api/donations/notification", func(c *fiber.Ctx) error {
