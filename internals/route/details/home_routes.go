@@ -8,43 +8,36 @@ import (
 	PostRoutes "masjidku_backend/internals/features/home/posts/route"
 	QouteRoutes "masjidku_backend/internals/features/home/qoutes/route"
 	QuestionnaireRoutes "masjidku_backend/internals/features/home/questionnaires/route"
-	rateLimiter "masjidku_backend/internals/middlewares"
-	// authMiddleware "masjidku_backend/internals/middlewares/auth"
-	MasjidkuMiddleware "masjidku_backend/internals/middlewares/features"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
 
-func HomeRoutes(app *fiber.App, db *gorm.DB) {
-	// Grup umum (tanpa admin masjid check)
-	api := app.Group("/api",
-		// authMiddleware.AuthMiddleware(db),
-		rateLimiter.GlobalRateLimiter(),
-	)
+// ✅ Untuk route publik tanpa token
+// Contoh akses: /api/public/quotes
+func HomePublicRoutes(api fiber.Router, db *gorm.DB) {
+	QouteRoutes.QuoteUserRoutes(api, db)
+	AdviceRoutes.AdviceUserRoutes(api, db)
+	FaqRoutes.FaqQuestionUserRoutes(api, db)
+	ArticleRoutes.ArticleUserRoutes(api, db)
+	PostRoutes.PostUserRoutes(api, db)
+	QuestionnaireRoutes.QuestionnaireQuestionUserRoutes(api, db)
+}
 
-	// Grup ADMIN (dengan validasi masjid_admin_ids via JWT)
-	adminDKMGroup := api.Group("/a",
-		MasjidkuMiddleware.IsMasjidAdmin(), // 💥 hanya grup ini yang cek masjid_id
-	)
-	// Semua /api/a/... route hanya bisa diakses jika user adalah admin masjid
-	FaqRoutes.FaqQuestionAdminRoutes(adminDKMGroup, db)
-	AdviceRoutes.AdviceAdminRoutes(adminDKMGroup, db)
-	ArticleRoutes.ArticleAdminRoutes(adminDKMGroup, db)
-	PostRoutes.PostAdminRoutes(adminDKMGroup, db)
-	QuestionnaireRoutes.QuestionnaireQuestionAdminRoutes(adminDKMGroup, db)
+// ✅ Untuk route user login (dengan token)
+// Contoh akses: /api/u/notifications
+func HomePrivateRoutes(api fiber.Router, db *gorm.DB) {
+	private := api.Group("/u")
+	NotificationRoutes.NotificationUserRoutes(private, db)
+}
 
-	adminGroup := api.Group("/a")
-	QouteRoutes.QuoteAdminRoutes(adminGroup, db)
-
-
-	// Grup USER biasa (cukup login + rate limiter)
-	userGroup := api.Group("/u")
-	NotificationRoutes.NotificationUserRoutes(userGroup, db)
-	FaqRoutes.FaqQuestionUserRoutes(userGroup, db)
-	AdviceRoutes.AdviceUserRoutes(userGroup, db)
-	ArticleRoutes.ArticleUserRoutes(userGroup, db)
-	QouteRoutes.QuoteUserRoutes(userGroup, db)
-	PostRoutes.PostUserRoutes(userGroup, db)
-	QuestionnaireRoutes.QuestionnaireQuestionUserRoutes(userGroup, db)
+// ✅ Untuk route admin masjid (token + admin)
+// Contoh akses: /api/a/quotes
+func HomeAdminRoutes(api fiber.Router, db *gorm.DB) {
+	FaqRoutes.FaqQuestionAdminRoutes(api, db)
+	AdviceRoutes.AdviceAdminRoutes(api, db)
+	ArticleRoutes.ArticleAdminRoutes(api, db)
+	PostRoutes.PostAdminRoutes(api, db)
+	QuestionnaireRoutes.QuestionnaireQuestionAdminRoutes(api, db)
+	QouteRoutes.QuoteAdminRoutes(api, db)
 }
