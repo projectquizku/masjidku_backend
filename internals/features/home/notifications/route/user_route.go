@@ -12,4 +12,6 @@ func NotificationUserRoutes(user fiber.Router, db *gorm.DB) {
 
 	notification := user.Group("/notifications")
 	notification.Get("/", ctrl.GetAllNotificationsForUser) // 🟢 Lihat semua notifikasi untuk user
+	notification.Post("/by-masjid", ctrl.GetNotificationsByMasjid)
+
 }

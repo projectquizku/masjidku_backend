@@ -50,3 +50,11 @@ func ToQuoteDTO(m model.QuoteModel) QuoteDTO {
 		CreatedAt:    m.CreatedAt,
 	}
 }
+
+func (r *CreateQuoteRequest) ToModel() *model.QuoteModel {
+	return &model.QuoteModel{
+		QuoteText:    r.QuoteText,
+		IsPublished:  r.IsPublished,
+		DisplayOrder: r.DisplayOrder,
+	}
+}

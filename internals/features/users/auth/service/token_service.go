@@ -7,13 +7,14 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 
+	"masjidku_backend/internals/configs"
 	authHelper "masjidku_backend/internals/features/users/auth/helper"
 	authModel "masjidku_backend/internals/features/users/auth/model"
 	authRepo "masjidku_backend/internals/features/users/auth/repository"
 	userModel "masjidku_backend/internals/features/users/user/model"
-	"masjidku_backend/internals/configs"
 	helpers "masjidku_backend/internals/helpers"
 )
 
@@ -88,13 +89,13 @@ func issueTokens(c *fiber.Ctx, db *gorm.DB, user userModel.UserModel) error {
 	)
 
 	// 🔐 Generate Access Token
-	accessToken, accessExp, err := generateToken(user, configs.JWTSecret, accessTokenDuration)
+	accessToken, accessExp, err := generateToken(user, db, configs.JWTSecret, accessTokenDuration)
 	if err != nil {
 		return helpers.Error(c, fiber.StatusInternalServerError, "Gagal membuat access token")
 	}
 
 	// 🔐 Generate Refresh Token
-	refreshToken, refreshExp, err := generateToken(user, configs.JWTRefreshSecret, refreshTokenDuration)
+	refreshToken, refreshExp, err := generateToken(user, db, configs.JWTRefreshSecret, refreshTokenDuration)
 	if err != nil {
 		return helpers.Error(c, fiber.StatusInternalServerError, "Gagal membuat refresh token")
 	}
@@ -135,14 +136,31 @@ func issueTokens(c *fiber.Ctx, db *gorm.DB, user userModel.UserModel) error {
 }
 
 // ========================== GENERATE TOKEN ==========================
-func generateToken(user userModel.UserModel, secretKey string, duration time.Duration) (string, time.Time, error) {
+func generateToken(user userModel.UserModel, db *gorm.DB, secretKey string, duration time.Duration) (string, time.Time, error) {
 	expiration := time.Now().Add(duration)
 
+	// Ambil semua masjid_id dari tabel masjid_admins
+	var masjidIDs []uuid.UUID
+	err := db.Table("masjid_admins").
+		Where("masjid_admins_user_id = ? AND masjid_admins_is_active = true", user.ID).
+		Pluck("masjid_admins_masjid_id", &masjidIDs).Error
+	if err != nil {
+		return "", time.Time{}, err
+	}
+
+	// Konversi ke []string
+	var masjidIDStrs []string
+	for _, id := range masjidIDs {
+		masjidIDStrs = append(masjidIDStrs, id.String())
+	}
+
+	// Tambahkan ke claims
 	claims := jwt.MapClaims{
-		"id":        user.ID.String(),
-		"user_name": user.UserName,
-		"role":      user.Role,
-		"exp":       expiration.Unix(),
+		"id":               user.ID.String(),
+		"user_name":        user.UserName,
+		"role":             user.Role,
+		"masjid_admin_ids": masjidIDStrs, // 🟢 ditambahkan di sini
+		"exp":              expiration.Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

@@ -10,8 +10,8 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 
-	TokenBlacklistModel "masjidku_backend/internals/features/users/auth/model"
 	"masjidku_backend/internals/configs"
+	TokenBlacklistModel "masjidku_backend/internals/features/users/auth/model"
 
 	"gorm.io/gorm"
 )
@@ -150,6 +150,20 @@ func AuthMiddleware(db *gorm.DB) fiber.Handler {
 		}
 		if userName, ok := claims["user_name"].(string); ok {
 			c.Locals("user_name", userName)
+		}
+
+		// 🕌 Simpan daftar masjid_admin_ids ke context (jika ada)
+		if masjidIDs, ok := claims["masjid_admin_ids"].([]interface{}); ok {
+			var ids []string
+			for _, id := range masjidIDs {
+				if s, ok := id.(string); ok {
+					ids = append(ids, s)
+				}
+			}
+			c.Locals("masjid_admin_ids", ids)
+			log.Println("[SUCCESS] Masjid admin IDs stored in context:", ids)
+		} else {
+			log.Println("[INFO] Token tidak mengandung masjid_admin_ids")
 		}
 
 		log.Println("[SUCCESS] Token valid, lanjutkan request")

@@ -9,36 +9,42 @@ import (
 	QouteRoutes "masjidku_backend/internals/features/home/qoutes/route"
 	QuestionnaireRoutes "masjidku_backend/internals/features/home/questionnaires/route"
 	rateLimiter "masjidku_backend/internals/middlewares"
-	authMiddleware "masjidku_backend/internals/middlewares/auth"
+	// authMiddleware "masjidku_backend/internals/middlewares/auth"
+	MasjidkuMiddleware "masjidku_backend/internals/middlewares/features"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
 
 func HomeRoutes(app *fiber.App, db *gorm.DB) {
+	// Grup umum (tanpa admin masjid check)
 	api := app.Group("/api",
-		authMiddleware.AuthMiddleware(db),
+		// authMiddleware.AuthMiddleware(db),
 		rateLimiter.GlobalRateLimiter(),
 	)
 
-	// Group untuk admin: /api/a/...
+	// Grup ADMIN (dengan validasi masjid_admin_ids via JWT)
+	adminDKMGroup := api.Group("/a",
+		MasjidkuMiddleware.IsMasjidAdmin(), // 💥 hanya grup ini yang cek masjid_id
+	)
+	// Semua /api/a/... route hanya bisa diakses jika user adalah admin masjid
+	FaqRoutes.FaqQuestionAdminRoutes(adminDKMGroup, db)
+	AdviceRoutes.AdviceAdminRoutes(adminDKMGroup, db)
+	ArticleRoutes.ArticleAdminRoutes(adminDKMGroup, db)
+	PostRoutes.PostAdminRoutes(adminDKMGroup, db)
+	QuestionnaireRoutes.QuestionnaireQuestionAdminRoutes(adminDKMGroup, db)
+
 	adminGroup := api.Group("/a")
-
-	NotificationRoutes.NotificationRoutes(adminGroup, db)
-	FaqRoutes.FaqQuestionAdminRoutes(adminGroup, db)
-	AdviceRoutes.AdviceAdminRoutes(adminGroup, db)
-	ArticleRoutes.ArticleAdminRoutes(adminGroup, db)
 	QouteRoutes.QuoteAdminRoutes(adminGroup, db)
-	PostRoutes.PostAdminRoutes(adminGroup, db)
-	QuestionnaireRoutes.QuestionnaireQuestionAdminRoutes(adminGroup, db)
-	// Group untuk user/public: /api/u/...
 
-	adminGroup = api.Group("/u")
-	NotificationRoutes.NotificationUserRoutes(adminGroup, db)
-	FaqRoutes.FaqQuestionUserRoutes(adminGroup, db)
-	AdviceRoutes.AdviceUserRoutes(adminGroup, db)
-	ArticleRoutes.ArticleUserRoutes(adminGroup, db)
-	QouteRoutes.QuoteUserRoutes(adminGroup, db)
-	PostRoutes.PostUserRoutes(adminGroup, db)
-	QuestionnaireRoutes.QuestionnaireQuestionUserRoutes(adminGroup, db)
+
+	// Grup USER biasa (cukup login + rate limiter)
+	userGroup := api.Group("/u")
+	NotificationRoutes.NotificationUserRoutes(userGroup, db)
+	FaqRoutes.FaqQuestionUserRoutes(userGroup, db)
+	AdviceRoutes.AdviceUserRoutes(userGroup, db)
+	ArticleRoutes.ArticleUserRoutes(userGroup, db)
+	QouteRoutes.QuoteUserRoutes(userGroup, db)
+	PostRoutes.PostUserRoutes(userGroup, db)
+	QuestionnaireRoutes.QuestionnaireQuestionUserRoutes(userGroup, db)
 }

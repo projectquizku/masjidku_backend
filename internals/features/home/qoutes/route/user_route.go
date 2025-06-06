@@ -12,6 +12,8 @@ func QuoteUserRoutes(api fiber.Router, db *gorm.DB) {
 
 	// === USER ROUTES ===
 	user := api.Group("/quotes")
-	user.Get("/", ctrl.GetAllQuotes)    // 📄 Lihat semua quote
-	user.Get("/:id", ctrl.GetQuoteByID) // 🔍 Detail quote
+	user.Get("/", ctrl.GetAllQuotes)             // 📄 Lihat semua quote
+	user.Get("/:id", ctrl.GetQuoteByID)          // 🔍 Detail quote
+	user.Get("/batch/30", ctrl.GetQuotesByBatch) // 📦 Ambil 30 quote per batch (gunakan query param ?batch_number=1)
+
 }

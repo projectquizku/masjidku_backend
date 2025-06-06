@@ -5,6 +5,7 @@ import (
 	"masjidku_backend/internals/features/masjids/lectures/lectures/model"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -50,21 +51,36 @@ func (ctrl *UserLectureController) CreateUserLecture(c *fiber.Ctx) error {
 }
 
 // 🟢 GET /api/a/user-lectures?lecture_id=...
+// 🟢 POST /api/u/user-lectures/by-lecture
 func (ctrl *UserLectureController) GetUsersByLecture(c *fiber.Ctx) error {
-	lectureID := c.Query("lecture_id")
-	if lectureID == "" {
+	// Ambil dari JSON body
+	var payload struct {
+		LectureID string `json:"lecture_id"`
+	}
+	if err := c.BodyParser(&payload); err != nil || payload.LectureID == "" {
 		return c.Status(400).JSON(fiber.Map{"message": "lecture_id wajib dikirim"})
 	}
 
+	// Validasi UUID
+	lectureID, err := uuid.Parse(payload.LectureID)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"message": "lecture_id tidak valid", "error": err.Error()})
+	}
+
+	// Ambil data peserta dari DB
 	var participants []model.UserLectureModel
 	if err := ctrl.DB.Where("user_lecture_lecture_id = ?", lectureID).Find(&participants).Error; err != nil {
 		return c.Status(500).JSON(fiber.Map{"message": "Gagal mengambil peserta", "error": err.Error()})
 	}
 
+	// Konversi ke response DTO
 	var result []dto.UserLectureResponse
 	for _, p := range participants {
 		result = append(result, *dto.ToUserLectureResponse(&p))
 	}
 
-	return c.JSON(fiber.Map{"message": "Berhasil mengambil peserta kajian", "data": result})
+	return c.JSON(fiber.Map{
+		"message": "Berhasil mengambil peserta kajian",
+		"data":    result,
+	})
 }

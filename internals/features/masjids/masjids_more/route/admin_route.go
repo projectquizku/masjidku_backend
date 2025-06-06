@@ -12,7 +12,6 @@ func MasjidMoreRoutes(router fiber.Router, db *gorm.DB) {
 
 	profil_teacher_dkm := router.Group("/masjid-profile-teacher-dkm")
 	profil_teacher_dkm.Post("/", ctrl.CreateProfile)
-	profil_teacher_dkm.Post("/by-masjid", ctrl.GetProfilesByMasjid)
 	profil_teacher_dkm.Put("/:id", ctrl.UpdateProfile)
 	profil_teacher_dkm.Delete("/:id", ctrl.DeleteProfile)
 

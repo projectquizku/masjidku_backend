@@ -12,9 +12,10 @@ func QuoteAdminRoutes(api fiber.Router, db *gorm.DB) {
 
 	// === ADMIN ROUTES ===
 	admin := api.Group("/quotes")
-	admin.Post("/", ctrl.CreateQuote)      // ➕ Buat quote
-	admin.Put("/:id", ctrl.UpdateQuote)    // ✏️ Ubah quote
-	admin.Delete("/:id", ctrl.DeleteQuote) // 🗑️ Hapus quote
-	admin.Get("/", ctrl.GetAllQuotes)      // 📄 Lihat semua quote
-	admin.Get("/:id", ctrl.GetQuoteByID)   // 🔍 Detail quote
+	admin.Post("/", ctrl.CreateQuote)              // ➕ Buat quote
+	admin.Post("/batch", ctrl.CreateQuotes) // ➕ Tambah banyak quote
+	admin.Put("/:id", ctrl.UpdateQuote)            // ✏️ Ubah quote
+	admin.Delete("/:id", ctrl.DeleteQuote)         // 🗑️ Hapus quote
+	admin.Get("/", ctrl.GetAllQuotes)              // 📄 Lihat semua quote
+	admin.Get("/:id", ctrl.GetQuoteByID)           // 🔍 Detail quote
 }

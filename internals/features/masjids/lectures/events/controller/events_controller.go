@@ -61,3 +61,21 @@ func (ctrl *EventController) GetEventsByMasjid(c *fiber.Ctx) error {
 		"data":    dto.ToEventResponseList(events),
 	})
 }
+
+// 🟢 GET /api/a/events/all atau /api/u/events/all
+func (ctrl *EventController) GetAllEvents(c *fiber.Ctx) error {
+	var events []model.EventModel
+
+	if err := ctrl.DB.Order("event_start_time desc").Find(&events).Error; err != nil {
+		log.Printf("[ERROR] Gagal mengambil semua event: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal mengambil data event",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Berhasil mengambil semua event",
+		"data":    dto.ToEventResponseList(events),
+	})
+}

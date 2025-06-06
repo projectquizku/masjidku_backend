@@ -12,8 +12,10 @@ func PostUserRoutes(api fiber.Router, db *gorm.DB) {
 
 	user := api.Group("/posts")
 
-	user.Get("/", ctrl.GetAllPosts)    // 📄 Semua post publik
-	user.Get("/:id", ctrl.GetPostByID) // 🔍 Detail post
+	user.Get("/", ctrl.GetAllPosts)                // 📄 Semua post publik
+	user.Get("/:id", ctrl.GetPostByID)             // 🔍 Detail post
+	user.Post("/by-masjid", ctrl.GetPostsByMasjid) // 🕌 Post berdasarkan masjid_id
+
 	// (opsional: bisa tambahkan route untuk like/unlike post di sini nanti)
 
 	ctrl2 := controller.NewPostLikeController(db)

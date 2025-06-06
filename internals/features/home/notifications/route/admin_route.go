@@ -13,7 +13,7 @@ func NotificationRoutes(api fiber.Router, db *gorm.DB) {
 	notif := api.Group("/notifications")
 	notif.Post("/", notifCtrl.CreateNotification)
 	notif.Get("/", notifCtrl.GetAllNotifications)
-	notif.Post("/by-masjid", notifCtrl.GetNotificationsByMasjid)
+	
 
 	// 🔹 Controller Notifikasi untuk User
 	notifUserCtrl := controller.NewNotificationUserController(db)

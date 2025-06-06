@@ -1,8 +1,11 @@
 package controller
 
 import (
+	"fmt"
 	"masjidku_backend/internals/features/home/qoutes/dto"
 	"masjidku_backend/internals/features/home/qoutes/model"
+	"math"
+	"strconv"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -24,25 +27,72 @@ func NewQuoteController(db *gorm.DB) *QuoteController {
 // ➕ Create Quote
 // =============================
 func (ctrl *QuoteController) CreateQuote(c *fiber.Ctx) error {
-	var body dto.CreateQuoteRequest
-	if err := c.BodyParser(&body); err != nil {
+	var req dto.CreateQuoteRequest
+	if err := c.BodyParser(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
 	}
-	if err := validateQuote.Struct(&body); err != nil {
+	if err := validateQuote.Struct(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 
-	quote := model.QuoteModel{
-		QuoteText:    body.QuoteText,
-		IsPublished:  body.IsPublished,
-		DisplayOrder: body.DisplayOrder,
+	// Cari DisplayOrder tertinggi
+	var maxOrder int
+	if err := ctrl.DB.Model(&model.QuoteModel{}).Select("COALESCE(MAX(display_order), 0)").Scan(&maxOrder).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get max display order")
 	}
 
-	if err := ctrl.DB.Create(&quote).Error; err != nil {
+	quote := req.ToModel()
+	quote.DisplayOrder = maxOrder + 1 // ✅ Auto increment
+
+	if err := ctrl.DB.Create(quote).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to create quote")
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(dto.ToQuoteDTO(quote))
+	return c.Status(fiber.StatusCreated).JSON(dto.ToQuoteDTO(*quote))
+}
+
+// =============================
+// ➕ Create Multiple Quotes
+// =============================
+func (ctrl *QuoteController) CreateQuotes(c *fiber.Ctx) error {
+	var reqs []dto.CreateQuoteRequest
+	if err := c.BodyParser(&reqs); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	// Validasi setiap item
+	for i, req := range reqs {
+		if err := validateQuote.Struct(&req); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, "Error in item "+fmt.Sprint(i+1)+": "+err.Error())
+		}
+	}
+
+	// Ambil DisplayOrder tertinggi saat ini
+	var maxOrder int
+	if err := ctrl.DB.Model(&model.QuoteModel{}).Select("COALESCE(MAX(display_order), 0)").Scan(&maxOrder).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get max display order")
+	}
+
+	// Konversi & assign DisplayOrder
+	var quotes []model.QuoteModel
+	for i, req := range reqs {
+		quote := req.ToModel()
+		quote.DisplayOrder = maxOrder + i + 1 // ✅ Increment sesuai urutan
+		quotes = append(quotes, *quote)
+	}
+
+	// Simpan dalam batch
+	if err := ctrl.DB.Create(&quotes).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to create quotes")
+	}
+
+	// Ubah ke DTO untuk respons
+	var result []dto.QuoteDTO
+	for _, q := range quotes {
+		result = append(result, dto.ToQuoteDTO(q))
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(result)
 }
 
 // =============================
@@ -118,4 +168,38 @@ func (ctrl *QuoteController) GetQuoteByID(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(dto.ToQuoteDTO(quote))
+}
+
+// =============================
+// 📦 Get 30 Quotes by Batch
+// =============================
+func (ctrl *QuoteController) GetQuotesByBatch(c *fiber.Ctx) error {
+	batchParam := c.Query("batch_number", "1")
+	batchNum, err := strconv.Atoi(batchParam)
+	if err != nil || batchNum < 1 {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid batch_number")
+	}
+
+	const batchSize = 30
+	offset := (batchNum - 1) * batchSize
+
+	var quotes []model.QuoteModel
+	if err := ctrl.DB.Order("display_order ASC").Offset(offset).Limit(batchSize).Find(&quotes).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve quotes")
+	}
+
+	var totalCount int64
+	ctrl.DB.Model(&model.QuoteModel{}).Count(&totalCount)
+	totalBatches := int(math.Ceil(float64(totalCount) / float64(batchSize)))
+
+	var result []dto.QuoteDTO
+	for _, q := range quotes {
+		result = append(result, dto.ToQuoteDTO(q))
+	}
+
+	return c.JSON(fiber.Map{
+		"batch":                 batchNum,
+		"total_available_batch": totalBatches,
+		"data":                  result,
+	})
 }

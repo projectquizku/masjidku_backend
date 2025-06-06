@@ -12,7 +12,7 @@ func EventRoutes(api fiber.Router, db *gorm.DB) {
 	eventCtrl := controller.NewEventController(db)
 	event := api.Group("/events")
 	event.Post("/", eventCtrl.CreateEvent)
-	event.Post("/by-masjid", eventCtrl.GetEventsByMasjid)
+	// event.Post("/by-masjid", eventCtrl.GetEventsByMasjid)
 
 	// 🔹 User Event Registrations
 	registrationCtrl := controller.NewUserEventRegistrationController(db)

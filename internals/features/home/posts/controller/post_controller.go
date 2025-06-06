@@ -107,3 +107,42 @@ func (ctrl *PostController) DeletePost(c *fiber.Ctx) error {
 
 	return c.SendStatus(fiber.StatusNoContent)
 }
+
+// =============================
+// 📄 Get Posts by Masjid ID
+// =============================// =============================
+// 📄 Get Posts by Masjid ID
+// =============================
+func (ctrl *PostController) GetPostsByMasjid(c *fiber.Ctx) error {
+	type RequestBody struct {
+		MasjidID string `json:"masjid_id" validate:"required,uuid"`
+	}
+
+	var req RequestBody
+	if err := c.BodyParser(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	// ✅ Ganti validate → validatePost
+	if err := validatePost.Struct(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+
+	var posts []model.PostModel
+	if err := ctrl.DB.
+		Where("post_masjid_id = ? AND post_deleted_at IS NULL", req.MasjidID).
+		Order("post_created_at DESC").
+		Find(&posts).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve posts")
+	}
+
+	var result []dto.PostDTO
+	for _, post := range posts {
+		result = append(result, dto.ToPostDTO(post))
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Berhasil mengambil daftar postingan masjid",
+		"data":    result,
+	})
+}
