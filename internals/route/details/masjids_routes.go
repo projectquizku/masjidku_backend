@@ -12,9 +12,6 @@ import (
 	MasjidAdmin "masjidku_backend/internals/features/masjids/masjid_admins/route"
 	masjidRoutes "masjidku_backend/internals/features/masjids/masjids/route"
 	MasjidMore "masjidku_backend/internals/features/masjids/masjids_more/route"
-	rateLimiter "masjidku_backend/internals/middlewares"
-	authMiddleware "masjidku_backend/internals/middlewares/auth"
-	MasjidkuMiddleware "masjidku_backend/internals/middlewares/features"
 
 	userFollowMasjid "masjidku_backend/internals/features/masjids/user_follow_masjids/route"
 
@@ -22,39 +19,35 @@ import (
 	"gorm.io/gorm"
 )
 
-func MasjidRoutes(app *fiber.App, db *gorm.DB) {
-	api := app.Group("/api",
-		authMiddleware.AuthMiddleware(db),
-		rateLimiter.GlobalRateLimiter(),
-	)
+func MasjidPublicRoutes(r fiber.Router, db *gorm.DB) {
+	// Ini endpoint yang boleh diakses publik tanpa login
+	masjidRoutes.MasjidUserRoutes(r, db)
+}
 
-	// Group untuk admin: /api/a/...
-	adminGroup := api.Group("/a",
-		MasjidkuMiddleware.IsMasjidAdmin(), // 💥 hanya grup ini yang cek masjid_id
-	)
-	masjidRoutes.MasjidAdminRoutes(adminGroup, db)
-	MasjidAdmin.MasjidAdminRoutes(adminGroup, db)
-	MasjidMore.MasjidMoreRoutes(adminGroup, db)
-	LectureRoutes.LectureRoutes(adminGroup, db)
-	EventRoutes.EventRoutes(adminGroup, db)
-	NotificationRoutes.NotificationRoutes(adminGroup, db)
-	FaqRoutes.FaqQuestionAdminRoutes(adminGroup, db)
-	LectureSessionRoutes.LectureSessionAdminRoutes(adminGroup, db)
-	LectureSessionsExamsRoutes.LectureSessionsExamsAdminRoutes(adminGroup, db)
-	LectureSessionsAssetRoutes.LectureSessionsAssetAdminRoutes(adminGroup, db)
-	LectureSessionsQuestionRoutes.LectureSessionsQuestionAdminRoutes(adminGroup, db)
+func MasjidUserRoutes(r fiber.Router, db *gorm.DB) {
+	// Ini endpoint yang butuh login user biasa (dengan token)
+	userFollowMasjid.UserFollowMasjidsRoutes(r, db)
+	MasjidMore.MasjidMoreUserRoutes(r, db)
+	LectureRoutes.UserLectureRoutes(r, db)
+	EventRoutes.EventRoutesUser(r, db)
+	FaqRoutes.FaqQuestionUserRoutes(r, db)
+	LectureSessionRoutes.LectureSessionUserRoutes(r, db)
+	LectureSessionsExamsRoutes.LectureSessionsExamsUserRoutes(r, db)
+	LectureSessionsAssetRoutes.LectureSessionsAssetUserRoutes(r, db)
+	LectureSessionsQuestionRoutes.LectureSessionsQuestionUserRoutes(r, db)
+}
 
-	// Group untuk user/public: /api/u/...
-	userGroup := api.Group("/u")
-	masjidRoutes.MasjidUserRoutes(userGroup, db)
-	userFollowMasjid.UserFollowMasjidsRoutes(userGroup, db)
-	MasjidMore.MasjidMoreUserRoutes(userGroup, db)
-	LectureRoutes.UserLectureRoutes(userGroup, db)
-	EventRoutes.EventRoutesUser(userGroup, db)
-	FaqRoutes.FaqQuestionUserRoutes(userGroup, db)
-	LectureSessionRoutes.LectureSessionUserRoutes(userGroup, db)
-	LectureSessionsExamsRoutes.LectureSessionsExamsUserRoutes(userGroup, db)
-	LectureSessionsAssetRoutes.LectureSessionsAssetUserRoutes(userGroup, db)
-	LectureSessionsQuestionRoutes.LectureSessionsQuestionUserRoutes(userGroup, db)
-
+func MasjidAdminRoutes(r fiber.Router, db *gorm.DB) {
+	// Ini endpoint khusus admin masjid
+	masjidRoutes.MasjidAdminRoutes(r, db)
+	MasjidAdmin.MasjidAdminRoutes(r, db)
+	MasjidMore.MasjidMoreRoutes(r, db)
+	LectureRoutes.LectureRoutes(r, db)
+	EventRoutes.EventRoutes(r, db)
+	NotificationRoutes.NotificationRoutes(r, db)
+	FaqRoutes.FaqQuestionAdminRoutes(r, db)
+	LectureSessionRoutes.LectureSessionAdminRoutes(r, db)
+	LectureSessionsExamsRoutes.LectureSessionsExamsAdminRoutes(r, db)
+	LectureSessionsAssetRoutes.LectureSessionsAssetAdminRoutes(r, db)
+	LectureSessionsQuestionRoutes.LectureSessionsQuestionAdminRoutes(r, db)
 }

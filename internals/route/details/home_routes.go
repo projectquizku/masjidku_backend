@@ -22,13 +22,15 @@ func HomePublicRoutes(api fiber.Router, db *gorm.DB) {
 	ArticleRoutes.ArticleUserRoutes(api, db)
 	PostRoutes.PostUserRoutes(api, db)
 	QuestionnaireRoutes.QuestionnaireQuestionUserRoutes(api, db)
+	NotificationRoutes.NotificationUserRoutes(api, db)
+
 }
 
 // ✅ Untuk route user login (dengan token)
 // Contoh akses: /api/u/notifications
 func HomePrivateRoutes(api fiber.Router, db *gorm.DB) {
-	private := api.Group("/u")
-	NotificationRoutes.NotificationUserRoutes(private, db)
+	// private := api.Group("/u")
+	// NotificationRoutes.NotificationUserRoutes(private, db)
 }
 
 // ✅ Untuk route admin masjid (token + admin)
