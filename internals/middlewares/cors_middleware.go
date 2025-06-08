@@ -10,7 +10,7 @@ import (
 // SetupMiddlewareCors membuat middleware CORS
 func CorsMiddleware() fiber.Handler {
 	return cors.New(cors.Config{
-		AllowOrigins:     "*", // sesuaikan
+		AllowOrigins:     "http://localhost:5500, http://127.0.0.1:5500, https://masjidkubackend-production.up.railway.app/", // sesuaikan
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		AllowCredentials: true,
