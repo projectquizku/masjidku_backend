@@ -36,9 +36,9 @@ func main() {
 	routes.SetupRoutes(app, database.DB)
 
 	// ✅ Baru tangani preflight OPTIONS (setelah semua route aktif)
-	app.Options("/*", func(c *fiber.Ctx) error {
-		return c.SendStatus(fiber.StatusNoContent) // 204 No Content
-	})
+	// app.Options("/*", func(c *fiber.Ctx) error {
+	// 	return c.SendStatus(fiber.StatusNoContent) // 204 No Content
+	// })
 
 	// ✅ Jalankan server
 	port := os.Getenv("PORT")

@@ -12,7 +12,6 @@ func LectureRoutes(api fiber.Router, db *gorm.DB) {
 	lectureCtrl := controller.NewLectureController(db)
 	lecture := api.Group("/lectures")
 	lecture.Post("/", lectureCtrl.CreateLecture)
-	lecture.Post("/by-masjid", lectureCtrl.GetLecturesByMasjid)
 
 	// 🔹 User Lectures
 	userLectureCtrl := controller.NewUserLectureController(db)

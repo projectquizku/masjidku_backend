@@ -34,24 +34,68 @@ func (ctrl *LectureController) CreateLecture(c *fiber.Ctx) error {
 	})
 }
 
-// 🟢 GET /api/a/lectures?masjid_id=...
-func (ctrl *LectureController) GetLecturesByMasjid(c *fiber.Ctx) error {
-	masjidID := c.Query("masjid_id")
-	if masjidID == "" {
-		return c.Status(400).JSON(fiber.Map{"message": "masjid_id wajib dikirim"})
+// ✅ POST /api/a/lectures/by-masjid-latest
+// ✅ POST /api/a/lectures/by-masjid-latest
+func (ctrl *LectureController) GetByMasjidID(c *fiber.Ctx) error {
+	type RequestBody struct {
+		MasjidID string `json:"masjid_id"`
 	}
 
-	var lectures []model.LectureModel
-	if err := ctrl.DB.Where("lecture_masjid_id = ?", masjidID).Find(&lectures).Error; err != nil {
-		return c.Status(500).JSON(fiber.Map{"message": "Gagal mengambil data", "error": err.Error()})
+	var body RequestBody
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Permintaan tidak valid",
+		})
 	}
 
-	var response []dto.LectureResponse
-	for _, l := range lectures {
-		response = append(response, *dto.ToLectureResponse(&l))
+	if body.MasjidID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Masjid ID wajib diisi",
+		})
 	}
 
-	return c.JSON(fiber.Map{"message": "Berhasil mengambil daftar kajian", "data": response})
+	userIDRaw := c.Locals("user_id")
+
+	var lecture model.LectureModel
+	if err := ctrl.DB.
+		Where("lecture_masjid_id = ?", body.MasjidID).
+		Order("lecture_created_at DESC").
+		First(&lecture).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": "Belum ada lecture untuk masjid ini",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal mengambil data lecture",
+		})
+	}
+
+	// Jika user login, cari data user_lecture
+	if userIDRaw != nil {
+		userIDStr, ok := userIDRaw.(string)
+		if ok && userIDStr != "" {
+			var userLecture model.UserLectureModel
+			if err := ctrl.DB.Where("user_lecture_user_id = ? AND user_lecture_lecture_id = ?", userIDStr, lecture.LectureID).
+				First(&userLecture).Error; err == nil {
+				// Gabungkan data
+				lectureMap := map[string]interface{}{
+					"lecture":      dto.ToLectureResponse(&lecture),
+					"user_lecture": userLecture,
+				}
+				return c.Status(fiber.StatusOK).JSON(fiber.Map{
+					"message": "Lecture dan partisipasi user ditemukan",
+					"data":    lectureMap,
+				})
+			}
+		}
+	}
+
+	// Jika user tidak login atau tidak ada data user_lecture
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Lecture terbaru berhasil ditemukan",
+		"data":    dto.ToLectureResponse(&lecture),
+	})
 }
 
 // 🟢 GET /api/a/lectures/:id
@@ -106,5 +150,3 @@ func (ctrl *LectureController) DeleteLecture(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"message": "Kajian berhasil dihapus"})
 }
-
-

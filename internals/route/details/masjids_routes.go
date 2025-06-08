@@ -23,15 +23,15 @@ func MasjidPublicRoutes(r fiber.Router, db *gorm.DB) {
 	// Ini endpoint yang boleh diakses publik tanpa login
 	masjidRoutes.MasjidUserRoutes(r, db)
 	MasjidMore.MasjidMoreUserRoutes(r, db)
+	LectureRoutes.UserLectureRoutes(r, db)
+	LectureSessionRoutes.LectureSessionUserRoutes(r, db)
 }
 
 func MasjidUserRoutes(r fiber.Router, db *gorm.DB) {
 	// Ini endpoint yang butuh login user biasa (dengan token)
 	userFollowMasjid.UserFollowMasjidsRoutes(r, db)
-	LectureRoutes.UserLectureRoutes(r, db)
 	EventRoutes.EventRoutesUser(r, db)
 	FaqRoutes.FaqQuestionUserRoutes(r, db)
-	LectureSessionRoutes.LectureSessionUserRoutes(r, db)
 	LectureSessionsExamsRoutes.LectureSessionsExamsUserRoutes(r, db)
 	LectureSessionsAssetRoutes.LectureSessionsAssetUserRoutes(r, db)
 	LectureSessionsQuestionRoutes.LectureSessionsQuestionUserRoutes(r, db)

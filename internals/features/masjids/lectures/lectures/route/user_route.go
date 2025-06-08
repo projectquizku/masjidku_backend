@@ -8,9 +8,15 @@ import (
 )
 
 func UserLectureRoutes(api fiber.Router, db *gorm.DB) {
+	lectureCtrl := controller.NewLectureController(db)
+
+	lecture := api.Group("/lectures")
+	lecture.Post("/by-masjid", lectureCtrl.GetByMasjidID)
+
 	ctrl := controller.NewUserLectureController(db)
 
-	lecture := api.Group("/user-lectures")
-	lecture.Post("/", ctrl.CreateUserLecture)
-	lecture.Post("/by-lecture", ctrl.GetUsersByLecture)// ✅ opsional tambahan jika ingin ambil semua kajian yang diikuti user
+	userLecture := api.Group("/user-lectures")
+	userLecture.Post("/", ctrl.CreateUserLecture)
+	userLecture.Post("/by-lecture", ctrl.GetUsersByLecture) // ✅ opsional tambahan jika ingin ambil semua kajian yang diikuti user
+
 }
