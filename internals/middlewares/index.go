@@ -8,7 +8,7 @@ import (
 
 // SetupMiddlewares menggabungkan semua middleware penting
 func SetupMiddlewares(app *fiber.App) {
+	app.Use(CorsMiddleware())                    // 🌐 CORS global
 	app.Use(RecoveryMiddleware())                // 🔥 Tangkap panic
 	app.Use(loggerMiddleware.LoggerMiddleware()) // 📝 Logger Request/Response
-	app.Use(CorsMiddleware())                    // 🌐 CORS global
 }
