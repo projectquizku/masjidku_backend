@@ -1,10 +1,13 @@
 package model
 
-type Token struct {
-    ID    int    `gorm:"primaryKey;autoIncrement" json:"id"`
-    Token string `gorm:"type:text;not null" json:"token"`
-}
+import (
+	"time"
 
-func (Token) TableName() string {
-    return "tokens"
+	"github.com/google/uuid"
+)
+
+type Token struct {
+	ID        uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primary_key" json:"id"`
+	Token     string    `gorm:"type:text;not null" json:"token"`
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
