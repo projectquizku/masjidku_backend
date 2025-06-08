@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"log"
 	"masjidku_backend/internals/features/users/token/model"
 
 	"github.com/gofiber/fiber/v2"
@@ -41,7 +42,10 @@ func (ctrl *TokenController) Create(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request body"})
 	}
 
+	log.Println("[DEBUG] Payload token:", payload)
+
 	if err := ctrl.DB.Create(&payload).Error; err != nil {
+		log.Println("[ERROR] Gagal menyimpan token:", err)
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to create token"})
 	}
 
