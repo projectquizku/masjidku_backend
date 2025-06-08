@@ -19,4 +19,6 @@ func MasjidUserRoutes(user fiber.Router, db *gorm.DB) {
 	// 📄 Group: /masjid-profiles
 	profile := user.Group("/masjid-profiles")
 	profile.Get("/", profileCtrl.GetProfileByMasjidID) // 🔍 Profil masjid by masjid_id
+	profile.Post("/by-masjid", profileCtrl.GetByMasjidID)
+
 }

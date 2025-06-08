@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"log"
+	"net/http"
 
 	"masjidku_backend/internals/features/masjids/masjids/dto"
 	"masjidku_backend/internals/features/masjids/masjids/model"
@@ -59,6 +60,46 @@ func (mpc *MasjidProfileController) GetProfileByMasjidID(c *fiber.Ctx) error {
 		"message": "Profil masjid berhasil diambil",
 		"data":    dto.FromModelMasjidProfile(&profile),
 	})
+}
+
+func (ctrl *MasjidProfileController) GetByMasjidID(c *fiber.Ctx) error {
+	
+	type MasjidIDRequest struct {
+		MasjidID string `json:"masjid_id"`
+	}
+	var payload MasjidIDRequest
+
+	// ⛔ Validasi body
+	if err := c.BodyParser(&payload); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": "Permintaan tidak valid",
+		})
+	}
+
+	// ✅ Parse UUID
+	masjidUUID, err := uuid.Parse(payload.MasjidID)
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": "Format masjid_id tidak valid",
+		})
+	}
+
+	// 🔍 Ambil data dari database
+	var profile model.MasjidProfileModel
+	err = ctrl.DB.Where("masjid_profile_masjid_id = ? AND masjid_profile_deleted_at IS NULL", masjidUUID).First(&profile).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(http.StatusNotFound).JSON(fiber.Map{
+				"error": "Profil masjid tidak ditemukan",
+			})
+		}
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Gagal mengambil data profil masjid",
+		})
+	}
+
+	// ✅ Kirim response DTO
+	return c.JSON(dto.FromModelMasjidProfile(&profile))
 }
 
 // 🟢 CREATE PROFILE
