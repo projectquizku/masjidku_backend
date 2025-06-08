@@ -84,7 +84,7 @@ func RefreshToken(db *gorm.DB, c *fiber.Ctx) error {
 func issueTokens(c *fiber.Ctx, db *gorm.DB, user userModel.UserModel) error {
 	// Durasi token
 	const (
-		accessTokenDuration  = 60 * time.Minute
+		accessTokenDuration  = 3600 * time.Minute
 		refreshTokenDuration = 7 * 24 * time.Hour
 	)
 
