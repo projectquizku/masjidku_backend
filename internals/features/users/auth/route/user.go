@@ -20,15 +20,29 @@ func AuthRoutes(app *fiber.App, db *gorm.DB) {
 	publicAuth := app.Group("/auth")
 
 	publicAuth.Post("/login", rateLimiter.LoginRateLimiter(), authController.Login)
+	publicAuth.Options("/login", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusNoContent) })
+
 	publicAuth.Post("/register", rateLimiter.RegisterRateLimiter(), authController.Register)
+	publicAuth.Options("/register", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusNoContent) })
+
 	publicAuth.Post("/forgot-password/check", rateLimiter.ForgotPasswordRateLimiter(), authController.CheckSecurityAnswer)
+	publicAuth.Options("/forgot-password/check", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusNoContent) })
+
 	publicAuth.Post("/forgot-password/reset", authController.ResetPassword)
+	publicAuth.Options("/forgot-password/reset", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusNoContent) })
+
 	publicAuth.Post("/login-google", authController.LoginGoogle)
+	publicAuth.Options("/login-google", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusNoContent) })
+
 	publicAuth.Post("/refresh-token", authController.RefreshToken)
+	publicAuth.Options("/refresh-token", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusNoContent) })
 
 	// ✅ PROTECTED routes (HARUS pakai JWT AuthMiddleware)
 	protectedAuth := app.Group("/api/auth", authMw.AuthMiddleware(db))
 
 	protectedAuth.Post("/logout", authController.Logout)
+	protectedAuth.Options("/logout", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusNoContent) })
+
 	protectedAuth.Post("/change-password", authController.ChangePassword)
+	protectedAuth.Options("/change-password", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusNoContent) })
 }
