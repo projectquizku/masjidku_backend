@@ -8,10 +8,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
+	"masjidku_backend/internals/configs"
 	authHelper "masjidku_backend/internals/features/users/auth/helper"
 	authRepo "masjidku_backend/internals/features/users/auth/repository"
 	userModel "masjidku_backend/internals/features/users/user/model"
-	"masjidku_backend/internals/configs"
 	helpers "masjidku_backend/internals/helpers"
 
 	progressUserService "masjidku_backend/internals/features/progress/progress/service"
@@ -24,6 +24,9 @@ func Register(db *gorm.DB, c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		return helpers.Error(c, fiber.StatusBadRequest, "Invalid request body")
 	}
+
+	// Force set role ke "user" untuk mencegah manipulasi
+	input.Role = "user"
 
 	if err := authHelper.ValidateRegisterInput(input.UserName, input.Email, input.Password, input.SecurityAnswer); err != nil {
 		return helpers.Error(c, fiber.StatusBadRequest, err.Error())
@@ -46,7 +49,7 @@ func Register(db *gorm.DB, c *fiber.Ctx) error {
 		return helpers.Error(c, fiber.StatusInternalServerError, "Failed to create user")
 	}
 
-	// ✅ Tambahan: langsung buat user_progress dan users_profile
+	// ✅ Buat progress dan profile default
 	_ = progressUserService.CreateInitialUserProgress(db, input.ID)
 	userProfileService.CreateInitialUserProfile(db, input.ID)
 

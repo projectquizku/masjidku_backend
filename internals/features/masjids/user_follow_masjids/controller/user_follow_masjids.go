@@ -99,6 +99,60 @@ func (ctrl *UserFollowMasjidController) UnfollowMasjid(c *fiber.Ctx) error {
 		"message": "Berhasil unfollow masjid",
 	})
 }
+func (ctrl *UserFollowMasjidController) IsFollowing(ctx *fiber.Ctx) error {
+	userIDStr, ok := ctx.Locals("user_id").(string)
+	log.Printf("DEBUG userID: %#v\n", userIDStr)
+	if !ok || userIDStr == "" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"success": false,
+			"message": "Unauthorized",
+		})
+	}
+
+	masjidIDStr := ctx.Query("masjid_id")
+	if masjidIDStr == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Parameter masjid_id wajib diisi",
+		})
+	}
+
+	// ✅ Parse ke UUID
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "user_id tidak valid",
+		})
+	}
+
+	masjidID, err := uuid.Parse(masjidIDStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "masjid_id tidak valid",
+		})
+	}
+
+	var count int64
+	err = ctrl.DB.Model(&model.UserFollowMasjidModel{}).
+		Where("follow_user_id = ? AND follow_masjid_id = ?", userID, masjidID).
+		Count(&count).Error
+
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Gagal mengecek status follow",
+		})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"success": true,
+		"data": fiber.Map{
+			"is_following": count > 0,
+		},
+	})
+}
 
 // 📄 Lihat semua masjid yang diikuti oleh user (dari JWT token)
 func (ctrl *UserFollowMasjidController) GetFollowedMasjidsByUser(c *fiber.Ctx) error {

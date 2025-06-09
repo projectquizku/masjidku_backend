@@ -41,7 +41,7 @@ func SetupRoutes(app *fiber.App, db *gorm.DB) {
 	routeDetails.MasjidPublicRoutes(masjidPublic, db)
 
 	log.Println("[INFO] Setting up MasjidRoutes (private)...")
-	masjidPrivate := app.Group("/api", authMiddleware.AuthMiddleware(db))
+	masjidPrivate := app.Group("/api/u", authMiddleware.AuthMiddleware(db))
 	routeDetails.MasjidUserRoutes(masjidPrivate, db)
 
 	log.Println("[INFO] Setting up MasjidRoutes (admin)...")

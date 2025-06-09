@@ -15,4 +15,7 @@ func UserFollowMasjidsRoutes(user fiber.Router, db *gorm.DB) {
 	follow.Post("/follow", ctrl.FollowMasjid)              // ➕ Follow masjid
 	follow.Delete("/unfollow", ctrl.UnfollowMasjid)        // ❌ Unfollow masjid
 	follow.Get("/followed", ctrl.GetFollowedMasjidsByUser) // 📄 Lihat daftar masjid yang di-follow
+
+	// ✅ Tambahkan route baru untuk is-following
+	follow.Get("/is-following", ctrl.IsFollowing)
 }
