@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS event_sessions (
     event_session_capacity INT,
     event_session_is_public BOOLEAN DEFAULT TRUE,
     event_session_is_registration_required BOOLEAN DEFAULT FALSE,
+    event_session_masjid_id UUID NOT NULL REFERENCES masjids(masjid_id) ON DELETE CASCADE,
     event_session_created_by UUID REFERENCES users(id) ON DELETE SET NULL,
     event_session_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     event_session_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

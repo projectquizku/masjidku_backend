@@ -17,6 +17,7 @@ type EventSessionRequest struct {
 	EventSessionLocation             string     `json:"event_session_location"`
 	EventSessionImageURL             string     `json:"event_session_image_url"`
 	EventSessionCapacity             int        `json:"event_session_capacity"`
+	EventSessionMasjidID             uuid.UUID  `json:"event_session_masjid_id"`
 	EventSessionIsPublic             bool       `json:"event_session_is_public"`
 	EventSessionIsRegistrationNeeded bool       `json:"event_session_is_registration_required"`
 	EventSessionStatus               string     `json:"event_session_status"`     // optional: 'upcoming', 'ongoing', etc
@@ -36,6 +37,7 @@ type EventSessionResponse struct {
 	EventSessionCapacity             int        `json:"event_session_capacity"`
 	EventSessionIsPublic             bool       `json:"event_session_is_public"`
 	EventSessionIsRegistrationNeeded bool       `json:"event_session_is_registration_required"`
+	EventSessionMasjidID             uuid.UUID  `json:"event_session_masjid_id"`
 	EventSessionStatus               string     `json:"event_session_status"`
 	EventSessionCreatedBy            *uuid.UUID `json:"event_session_created_by"`
 	EventSessionCreatedAt            string     `json:"event_session_created_at"`
@@ -54,6 +56,7 @@ func (r *EventSessionRequest) ToModel() *model.EventSessionModel {
 		EventSessionImageURL:             r.EventSessionImageURL,
 		EventSessionCapacity:             r.EventSessionCapacity,
 		EventSessionIsPublic:             r.EventSessionIsPublic,
+		EventSessionMasjidID:             r.EventSessionMasjidID,
 		EventSessionIsRegistrationNeeded: r.EventSessionIsRegistrationNeeded,
 		EventSessionCreatedBy:            r.EventSessionCreatedBy,
 	}
@@ -72,6 +75,7 @@ func ToEventSessionResponse(m *model.EventSessionModel) *EventSessionResponse {
 		EventSessionImageURL:             m.EventSessionImageURL,
 		EventSessionCapacity:             m.EventSessionCapacity,
 		EventSessionIsPublic:             m.EventSessionIsPublic,
+		EventSessionMasjidID:             m.EventSessionMasjidID,
 		EventSessionIsRegistrationNeeded: m.EventSessionIsRegistrationNeeded,
 		EventSessionCreatedBy:            m.EventSessionCreatedBy,
 		EventSessionCreatedAt:            m.EventSessionCreatedAt.Format("2006-01-02 15:04:05"),

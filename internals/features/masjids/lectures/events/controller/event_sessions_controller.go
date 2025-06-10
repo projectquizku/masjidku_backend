@@ -140,37 +140,73 @@ func (ctrl *EventSessionController) GetAllEventSessions(c *fiber.Ctx) error {
 	})
 }
 
-// 🟢 GET /api/u/event-sessions/upcoming
-// 🟢 GET /api/u/event-sessions/upcoming
 func (ctrl *EventSessionController) GetUpcomingEventSessions(c *fiber.Ctx) error {
 	var sessions []model.EventSessionModel
 
-	// 1. Ambil masjid_id dari query parameter
-	// Contoh: /api/u/event-sessions/upcoming?masjid_id=YOUR_MASJID_UUID
-	masjidIDStr := c.Query("masjid_id")
+	// CATATAN PENTING UNTUK ROUTING DI FILE UTAMA (misal: main.go atau routes.go):
+	//
+	// Untuk menangani permintaan ke: /public/event-sessions/upcoming/masjid-id (TANPA ID)
+	// Anda HARUS menambahkan rute ini LEBIH DULU:
+	// ```go
+	// session.Get("/upcoming/masjid-id", func(c *fiber.Ctx) error {
+	//    // Ini akan terpicu jika URL adalah /public/event-sessions/upcoming/masjid-id
+	//    log.Printf("[WARNING] Request received for /upcoming/masjid-id without a specific ID. Returning Bad Request.")
+	//    return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	//        "message": "ID masjid diperlukan di URL path untuk endpoint ini.",
+	//        "error":   "Missing masjid_id in URL path",
+	//    })
+	// })
+	// ```
+	//
+	// DAN KEMUDIAN, rute Anda yang sudah ada untuk menangani permintaan DENGAN ID:
+	// ```go
+	// session.Get("/upcoming/masjid-id/:masjid_id", ctrl.GetUpcomingEventSessions)
+	// ```
+	//
+	// Perhatikan urutan definisi rute ini sangat krusial di Fiber.
+
+	// 1. Ambil masjid_id dari PATH parameter
+	// PERHATIKAN: Nama parameter di c.Params() HARUS SAMA dengan di definisi rute
+	masjidIDStr := c.Params("masjid_id") // Nama parameter harus cocok dengan definisi rute (:masjid_id)
 
 	// Inisialisasi builder kueri GORM
+	// Filter awal untuk sesi yang akan datang dan bersifat publik
 	query := ctrl.DB.
 		Where("event_session_start_time > ? AND event_session_is_public = ?", time.Now(), true)
 
-	// 2. Jika masjid_id ada, tambahkan filter ke kueri
+	// 2. Jika masjid_id ada (dari path), tambahkan filter ke kueri
 	if masjidIDStr != "" {
 		masjidID, err := uuid.Parse(masjidIDStr)
 		if err != nil {
-			log.Printf("[ERROR] Invalid masjid_id format: %v", err)
+			log.Printf("[ERROR] Invalid masjid_id format from path: %v", err)
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"message": "Format ID masjid tidak valid",
-				"error":   "Invalid UUID format for masjid_id",
+				"error":   "Invalid UUID format for masjid_id in path",
 			})
 		}
-		// Asumsi model EventSessionModel memiliki EventMasjidID
-		// Anda perlu memastikan EventSessionModel Anda memiliki properti EventMasjidID
+		// Tambahkan filter berdasarkan event_session_masjid_id
 		query = query.Where("event_session_masjid_id = ?", masjidID)
+	} else {
+		// Log ini akan muncul jika GetUpcomingEventSessions dipanggil melalui rute tanpa parameter ID
+		// dan Flutter tidak mengirimkan ID di path.
+		// Jika ini terus muncul dan Anda ingin masjid_id selalu ada, pastikan Flutter mengirimkannya.
+		log.Printf("[INFO] GetUpcomingEventSessions dipanggil tanpa masjid_id di path. Mengambil semua event publik.")
+	}
+
+	// Ambil query parameter 'order' (jika ada)
+	// Ini tetap query parameter dari URL seperti ?order=terbaru
+	order := c.Query("order")
+	if order != "" {
+		// Contoh logika untuk order, jika diperlukan
+		// if order == "terbaru" {
+		// 	query = query.Order("event_session_created_at DESC")
+		// }
+		// Untuk saat ini, kita biarkan Order("event_session_start_time ASC") sebagai default
 	}
 
 	// 3. Lanjutkan dengan order dan Find
 	if err := query.
-		Order("event_session_start_time ASC").
+		Order("event_session_start_time ASC"). // Tetap urutkan berdasarkan waktu mulai
 		Find(&sessions).Error; err != nil {
 		log.Printf("[ERROR] Gagal mengambil sesi event upcoming: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -179,8 +215,9 @@ func (ctrl *EventSessionController) GetUpcomingEventSessions(c *fiber.Ctx) error
 		})
 	}
 
+	// Mengembalikan respons JSON dengan data sesi event
 	return c.JSON(fiber.Map{
 		"message": "Berhasil mengambil sesi event yang akan datang",
-		"data":    dto.ToEventSessionResponseList(sessions),
+		"data":    dto.ToEventSessionResponseList(sessions), // Asumsi ini mengonversi ke DTO yang sesuai
 	})
 }
