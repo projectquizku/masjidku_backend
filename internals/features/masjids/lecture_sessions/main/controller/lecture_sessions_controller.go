@@ -171,7 +171,6 @@ func (ctrl *LectureSessionController) UpdateLectureSession(c *fiber.Ctx) error {
 	session.LectureSessionDescription = body.LectureSessionDescription
 	session.LectureSessionScheduledTime = body.LectureSessionScheduledTime
 	session.LectureSessionPlace = body.LectureSessionPlace
-	session.LectureSessionIsSingle = body.LectureSessionIsSingle
 	session.LectureSessionLectureID = body.LectureSessionLectureID
 
 	if err := ctrl.DB.Save(&session).Error; err != nil {

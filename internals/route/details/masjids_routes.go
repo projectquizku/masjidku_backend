@@ -25,12 +25,12 @@ func MasjidPublicRoutes(r fiber.Router, db *gorm.DB) {
 	MasjidMore.MasjidMoreUserRoutes(r, db)
 	LectureRoutes.UserLectureRoutes(r, db)
 	LectureSessionRoutes.LectureSessionUserRoutes(r, db)
+	EventRoutes.EventRoutesUser(r, db)
 }
 
 func MasjidUserRoutes(r fiber.Router, db *gorm.DB) {
 	// Ini endpoint yang butuh login user biasa (dengan token)
 	userFollowMasjid.UserFollowMasjidsRoutes(r, db)
-	EventRoutes.EventRoutesUser(r, db)
 	FaqRoutes.FaqQuestionUserRoutes(r, db)
 	LectureSessionsExamsRoutes.LectureSessionsExamsUserRoutes(r, db)
 	LectureSessionsAssetRoutes.LectureSessionsAssetUserRoutes(r, db)

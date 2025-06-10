@@ -35,7 +35,6 @@ func (ctrl *LectureController) CreateLecture(c *fiber.Ctx) error {
 }
 
 // ✅ POST /api/a/lectures/by-masjid-latest
-// ✅ POST /api/a/lectures/by-masjid-latest
 func (ctrl *LectureController) GetByMasjidID(c *fiber.Ctx) error {
 	type RequestBody struct {
 		MasjidID string `json:"masjid_id"`

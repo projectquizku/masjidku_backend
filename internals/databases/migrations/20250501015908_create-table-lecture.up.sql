@@ -3,7 +3,9 @@ CREATE TABLE IF NOT EXISTS lectures (
     lecture_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lecture_title VARCHAR(255) NOT NULL,
     lecture_description TEXT,
-    lecture_place VARCHAR(255), -- Bisa nullable, default nilainya bisa diisi dari masjid_name di backend
+    total_lecture_sessions INTEGER, -- ❗️Tambahan: untuk skenario yang memiliki batas sesi
+    lecture_is_recurring BOOLEAN DEFAULT FALSE, -- ✅ Apakah ini kajian berulang?
+    lecture_recurrence_interval INTEGER, -- ✅ Jumlah hari antara kajian berulang
     lecture_masjid_id UUID REFERENCES masjids(masjid_id) ON DELETE CASCADE,
     lecture_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

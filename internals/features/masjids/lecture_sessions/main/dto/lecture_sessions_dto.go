@@ -53,7 +53,6 @@ func (r CreateLectureSessionRequest) ToModel(teacherID string) model.LectureSess
 		LectureSessionDescription:   r.LectureSessionDescription,
 		LectureSessionScheduledTime: r.LectureSessionScheduledTime,
 		LectureSessionPlace:         r.LectureSessionPlace,
-		LectureSessionIsSingle:      r.LectureSessionIsSingle,
 		LectureSessionLectureID:     r.LectureSessionLectureID,
 		LectureSessionTeacherID:     teacherID,
 	}
@@ -71,7 +70,6 @@ func ToLectureSessionDTO(m model.LectureSessionModel) LectureSessionDTO {
 		LectureSessionTeacherID:     m.LectureSessionTeacherID,
 		LectureSessionScheduledTime: m.LectureSessionScheduledTime,
 		LectureSessionPlace:         m.LectureSessionPlace,
-		LectureSessionIsSingle:      m.LectureSessionIsSingle,
 		LectureSessionLectureID:     m.LectureSessionLectureID,
 		LectureSessionCreatedAt:     m.LectureSessionCreatedAt,
 	}

@@ -5,7 +5,6 @@ CREATE TABLE lecture_sessions (
   lecture_session_teacher_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   lecture_session_scheduled_time TIMESTAMP NOT NULL,
   lecture_session_place TEXT,
-  lecture_session_is_single BOOLEAN DEFAULT FALSE,
   lecture_session_lecture_id UUID REFERENCES lectures(lecture_id) ON DELETE CASCADE,
   lecture_session_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

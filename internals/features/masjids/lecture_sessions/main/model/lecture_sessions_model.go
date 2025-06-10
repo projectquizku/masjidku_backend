@@ -12,7 +12,6 @@ type LectureSessionModel struct {
 	LectureSessionTeacherID     string    `gorm:"column:lecture_session_teacher_id;type:uuid;not null"`
 	LectureSessionScheduledTime time.Time `gorm:"column:lecture_session_scheduled_time;not null"`
 	LectureSessionPlace         *string   `gorm:"column:lecture_session_place;type:text"`
-	LectureSessionIsSingle      bool      `gorm:"column:lecture_session_is_single;default:false"`
 	LectureSessionLectureID     *string   `gorm:"column:lecture_session_lecture_id;type:uuid"`
 	LectureSessionCreatedAt     time.Time `gorm:"column:lecture_session_created_at;autoCreateTime"`
 

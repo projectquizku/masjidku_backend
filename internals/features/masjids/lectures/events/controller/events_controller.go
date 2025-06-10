@@ -22,13 +22,19 @@ func (ctrl *EventController) CreateEvent(c *fiber.Ctx) error {
 	var req dto.EventRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Printf("[ERROR] Body parser gagal: %v", err)
-		return c.Status(400).JSON(fiber.Map{"message": "Permintaan tidak valid", "error": err.Error()})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Permintaan tidak valid",
+			"error":   err.Error(),
+		})
 	}
 
 	newEvent := req.ToModel()
 	if err := ctrl.DB.Create(newEvent).Error; err != nil {
 		log.Printf("[ERROR] Gagal menyimpan event: %v", err)
-		return c.Status(500).JSON(fiber.Map{"message": "Gagal menyimpan event", "error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal menyimpan event",
+			"error":   err.Error(),
+		})
 	}
 
 	return c.JSON(fiber.Map{
@@ -44,16 +50,19 @@ func (ctrl *EventController) GetEventsByMasjid(c *fiber.Ctx) error {
 	}
 	var body Request
 	if err := c.BodyParser(&body); err != nil || body.MasjidID == "" {
-		return c.Status(400).JSON(fiber.Map{"message": "Masjid ID tidak valid"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Masjid ID tidak valid"})
 	}
 
 	var events []model.EventModel
 	if err := ctrl.DB.
 		Where("event_masjid_id = ?", body.MasjidID).
-		Order("event_start_time ASC").
+		Order("event_created_at DESC").
 		Find(&events).Error; err != nil {
 		log.Printf("[ERROR] Gagal mengambil data event: %v", err)
-		return c.Status(500).JSON(fiber.Map{"message": "Gagal mengambil event", "error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal mengambil event",
+			"error":   err.Error(),
+		})
 	}
 
 	return c.JSON(fiber.Map{
@@ -66,7 +75,7 @@ func (ctrl *EventController) GetEventsByMasjid(c *fiber.Ctx) error {
 func (ctrl *EventController) GetAllEvents(c *fiber.Ctx) error {
 	var events []model.EventModel
 
-	if err := ctrl.DB.Order("event_start_time desc").Find(&events).Error; err != nil {
+	if err := ctrl.DB.Order("event_created_at DESC").Find(&events).Error; err != nil {
 		log.Printf("[ERROR] Gagal mengambil semua event: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Gagal mengambil data event",
@@ -77,5 +86,29 @@ func (ctrl *EventController) GetAllEvents(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"message": "Berhasil mengambil semua event",
 		"data":    dto.ToEventResponseList(events),
+	})
+}
+
+// 🟢 GET /api/u/events/:slug
+func (ctrl *EventController) GetEventBySlug(c *fiber.Ctx) error {
+	slug := c.Params("slug")
+	if slug == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Slug tidak boleh kosong",
+		})
+	}
+
+	var event model.EventModel
+	if err := ctrl.DB.Where("event_slug = ?", slug).First(&event).Error; err != nil {
+		log.Printf("[ERROR] Event dengan slug '%s' tidak ditemukan: %v", slug, err)
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Event tidak ditemukan",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Event berhasil ditemukan",
+		"data":    dto.ToEventResponse(&event),
 	})
 }

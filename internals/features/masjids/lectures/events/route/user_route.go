@@ -8,11 +8,19 @@ import (
 )
 
 func EventRoutesUser(api fiber.Router, db *gorm.DB) {
-	// 🔹 Events (User hanya lihat, tidak bisa create)
+	// 🔹 Events (user hanya melihat)
 	eventCtrl := controller.NewEventController(db)
 	event := api.Group("/events")
 	event.Get("/", eventCtrl.GetAllEvents)
 	event.Post("/by-masjid", eventCtrl.GetEventsByMasjid)
+	event.Get("/:slug", eventCtrl.GetEventBySlug) // 🔥 tambahkan ini
+
+	// 🔹 Event Sessions (user lihat jadwal sesi)
+	sessionCtrl := controller.NewEventSessionController(db)
+	session := api.Group("/event-sessions")
+	session.Get("/all", sessionCtrl.GetAllEventSessions)
+	session.Get("/by-event/:event_id", sessionCtrl.GetEventSessionsByEvent)
+	session.Get("/upcoming", sessionCtrl.GetUpcomingEventSessions)
 
 	// 🔹 User Event Registrations
 	registrationCtrl := controller.NewUserEventRegistrationController(db)
