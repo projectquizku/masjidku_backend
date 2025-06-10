@@ -141,11 +141,35 @@ func (ctrl *EventSessionController) GetAllEventSessions(c *fiber.Ctx) error {
 }
 
 // 🟢 GET /api/u/event-sessions/upcoming
+// 🟢 GET /api/u/event-sessions/upcoming
 func (ctrl *EventSessionController) GetUpcomingEventSessions(c *fiber.Ctx) error {
 	var sessions []model.EventSessionModel
 
-	if err := ctrl.DB.
-		Where("event_session_start_time > ? AND event_session_is_public = ?", time.Now(), true).
+	// 1. Ambil masjid_id dari query parameter
+	// Contoh: /api/u/event-sessions/upcoming?masjid_id=YOUR_MASJID_UUID
+	masjidIDStr := c.Query("masjid_id")
+
+	// Inisialisasi builder kueri GORM
+	query := ctrl.DB.
+		Where("event_session_start_time > ? AND event_session_is_public = ?", time.Now(), true)
+
+	// 2. Jika masjid_id ada, tambahkan filter ke kueri
+	if masjidIDStr != "" {
+		masjidID, err := uuid.Parse(masjidIDStr)
+		if err != nil {
+			log.Printf("[ERROR] Invalid masjid_id format: %v", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Format ID masjid tidak valid",
+				"error":   "Invalid UUID format for masjid_id",
+			})
+		}
+		// Asumsi model EventSessionModel memiliki EventMasjidID
+		// Anda perlu memastikan EventSessionModel Anda memiliki properti EventMasjidID
+		query = query.Where("event_session_masjid_id = ?", masjidID)
+	}
+
+	// 3. Lanjutkan dengan order dan Find
+	if err := query.
 		Order("event_session_start_time ASC").
 		Find(&sessions).Error; err != nil {
 		log.Printf("[ERROR] Gagal mengambil sesi event upcoming: %v", err)
