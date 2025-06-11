@@ -8,7 +8,7 @@ import (
 )
 
 // ✅ User Routes (read-only atau sesuai akses yang dibolehkan)
-func LectureSessionUserRoutes(user fiber.Router, db *gorm.DB) {
+func AllLectureSessionRoutes(user fiber.Router, db *gorm.DB) {
 	lectureSessionCtrl := controller.NewLectureSessionController(db)
 	userLectureSessionCtrl := controller.NewUserLectureSessionController(db)
 

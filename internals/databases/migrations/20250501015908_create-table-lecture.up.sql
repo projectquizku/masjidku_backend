@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS user_lectures (
     user_lecture_grade_result INT, -- nilai hasil jika ada evaluasi
     user_lecture_lecture_id UUID NOT NULL REFERENCES lectures(lecture_id) ON DELETE CASCADE,
     user_lecture_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_lecture_total_completed_sessions INT DEFAULT 0, -- jumlah sesi yang sudah dihadiri
     user_lecture_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_lecture_lecture_id, user_lecture_user_id) -- satu user tidak bisa dua kali ikut satu kajian
 );

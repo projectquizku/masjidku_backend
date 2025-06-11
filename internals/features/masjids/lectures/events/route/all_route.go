@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func EventRoutesUser(api fiber.Router, db *gorm.DB) {
+func AllEventRoutes(api fiber.Router, db *gorm.DB) {
 	// 🔹 Events (user hanya melihat)
 	eventCtrl := controller.NewEventController(db)
 	event := api.Group("/events")

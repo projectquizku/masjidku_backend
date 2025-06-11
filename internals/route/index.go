@@ -34,10 +34,9 @@ func SetupRoutes(app *fiber.App, db *gorm.DB) {
 	log.Println("[INFO] Setting up CertificateRoutes...")
 	routeDetails.CertificateRoutes(app, db)
 
-
 	// ===================== MASJID PAGE =====================
 	log.Println("[INFO] Setting up MasjidRoutes (public)...")
-	masjidPublic := app.Group("/public")
+	masjidPublic := app.Group("/public", authMiddleware.OptionalJWTMiddleware(db))
 	routeDetails.MasjidPublicRoutes(masjidPublic, db)
 
 	log.Println("[INFO] Setting up MasjidRoutes (private)...")

@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func MasjidMoreUserRoutes(router fiber.Router, db *gorm.DB) {
+func AllMasjidMoreRoutes(router fiber.Router, db *gorm.DB) {
 	// 🎓 Endpoint untuk melihat daftar profil teacher/DKM (tanpa create/update/delete)
 	ctrl := controller.NewMasjidProfileTeacherDkmController(db)
 	profile := router.Group("/masjid-profile-teacher-dkm")

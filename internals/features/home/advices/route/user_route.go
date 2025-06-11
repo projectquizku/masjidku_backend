@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func AdviceUserRoutes(api fiber.Router, db *gorm.DB) {
+func AllAdviceRoutes(api fiber.Router, db *gorm.DB) {
 	adviceCtrl := controller.NewAdviceController(db)
 
 	user := api.Group("/advices")

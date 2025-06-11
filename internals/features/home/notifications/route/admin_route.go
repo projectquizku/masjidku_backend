@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func NotificationRoutes(api fiber.Router, db *gorm.DB) {
+func AllNotificationRoutes(api fiber.Router, db *gorm.DB) {
 	notifCtrl := controller.NewNotificationController(db)
 
 	notif := api.Group("/notifications")

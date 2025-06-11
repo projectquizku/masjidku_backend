@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func MasjidUserRoutes(user fiber.Router, db *gorm.DB) {
+func AllMasjidRoutes(user fiber.Router, db *gorm.DB) {
 	masjidCtrl := controller.NewMasjidController(db)
 	profileCtrl := controller.NewMasjidProfileController(db)
 

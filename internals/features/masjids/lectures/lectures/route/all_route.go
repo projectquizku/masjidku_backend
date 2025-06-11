@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func UserLectureRoutes(api fiber.Router, db *gorm.DB) {
+func AllLectureRoutes(api fiber.Router, db *gorm.DB) {
 	lectureCtrl := controller.NewLectureController(db)
 
 	lecture := api.Group("/lectures")
@@ -18,5 +18,7 @@ func UserLectureRoutes(api fiber.Router, db *gorm.DB) {
 	userLecture := api.Group("/user-lectures")
 	userLecture.Post("/", ctrl.CreateUserLecture)
 	userLecture.Post("/by-lecture", ctrl.GetUsersByLecture) // ✅ opsional tambahan jika ingin ambil semua kajian yang diikuti user
+	// 📌 Get progress for logged in user (user_id from JWT token)
+	userLecture.Get("/me", ctrl.GetUserLectureStats)
 
 }

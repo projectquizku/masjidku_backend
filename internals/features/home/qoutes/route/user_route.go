@@ -18,7 +18,7 @@ import (
 
 // }
 
-func QuoteUserRoutes(api fiber.Router, db *gorm.DB) {
+func AllQuoteRoutes(api fiber.Router, db *gorm.DB) {
 	ctrl := controller.NewQuoteController(db)
 
 	api.Get("/quotes", ctrl.GetAllQuotes)              // 📄 Lihat semua quote

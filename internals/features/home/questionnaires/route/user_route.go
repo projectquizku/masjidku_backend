@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func QuestionnaireQuestionUserRoutes(api fiber.Router, db *gorm.DB) {
+func AllQuestionnaireQuestionRoutes(api fiber.Router, db *gorm.DB) {
 	ctrl := controller.NewQuestionnaireQuestionController(db)
 
 	// 🛡️ Admin routes (manage data)

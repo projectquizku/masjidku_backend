@@ -3,6 +3,7 @@ package controller
 import (
 	"masjidku_backend/internals/features/masjids/lectures/lectures/dto"
 	"masjidku_backend/internals/features/masjids/lectures/lectures/model"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -82,5 +83,79 @@ func (ctrl *UserLectureController) GetUsersByLecture(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"message": "Berhasil mengambil peserta kajian",
 		"data":    result,
+	})
+}
+
+func (ctrl *UserLectureController) GetUserLectureStats(c *fiber.Ctx) error {
+	userIDRaw := c.Locals("user_id")
+	masjidID := c.Query("masjid_id")
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+	month := c.Query("month")
+	year := c.Query("year")
+	specificDate := c.Query("specific_date") // format: YYYY-MM-DD
+
+	if masjidID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Parameter masjid_id wajib diisi")
+	}
+
+	type Result struct {
+		model.LectureModel
+		UserLectureGradeResult       *int       `json:"user_lecture_grade_result,omitempty"`
+		UserLectureCreatedAt         *time.Time `json:"user_lecture_created_at,omitempty"`
+		TotalLectureSessions         int        `json:"total_lecture_sessions"`
+		CompleteTotalLectureSessions *int       `json:"complete_total_lecture_sessions,omitempty"`
+	}
+
+	var results []Result
+	userID := ""
+	if userIDRaw != nil {
+		userID = userIDRaw.(string)
+	}
+
+	// Gunakan total_lecture_sessions langsung dari tabel lectures
+	query := ctrl.DB.Table("lectures AS l").
+		Select([]string{
+			"l.*",
+			"ul.user_lecture_grade_result",
+			"ul.user_lecture_created_at",
+			"ul.user_lecture_total_completed_sessions AS complete_total_lecture_sessions",
+		}).
+		Joins("LEFT JOIN user_lectures ul ON ul.user_lecture_lecture_id = l.lecture_id")
+
+	if userID != "" {
+		query = query.Where("ul.user_lecture_user_id = ? OR ul.user_lecture_user_id IS NULL", userID)
+	}
+
+	query = query.Where("l.lecture_masjid_id = ?", masjidID)
+
+	switch {
+	case specificDate != "":
+		query = query.Where("DATE(l.lecture_created_at) = ?", specificDate)
+	case startDate != "" && endDate != "":
+		query = query.Where("l.lecture_created_at BETWEEN ? AND ?", startDate, endDate)
+	default:
+		if month != "" {
+			query = query.Where("EXTRACT(MONTH FROM l.lecture_created_at) = ?", month)
+		}
+		if year != "" {
+			query = query.Where("EXTRACT(YEAR FROM l.lecture_created_at) = ?", year)
+		}
+	}
+
+	query = query.Order("l.lecture_created_at DESC")
+
+	if err := query.Scan(&results).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Gagal mengambil data kajian")
+	}
+
+	message := "Berhasil mengambil daftar kajian"
+	if userID != "" {
+		message += " (dengan progress jika ada)"
+	}
+
+	return c.JSON(fiber.Map{
+		"message": message,
+		"data":    results,
 	})
 }

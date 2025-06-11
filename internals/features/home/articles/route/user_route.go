@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func ArticleUserRoutes(api fiber.Router, db *gorm.DB) {
+func AllArticleRoutes(api fiber.Router, db *gorm.DB) {
 	articleCtrl := controller.NewArticleController(db)
 
 	// === USER ROUTES ===

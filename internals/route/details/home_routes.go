@@ -16,13 +16,13 @@ import (
 // ✅ Untuk route publik tanpa token
 // Contoh akses: /api/public/quotes
 func HomePublicRoutes(api fiber.Router, db *gorm.DB) {
-	QouteRoutes.QuoteUserRoutes(api, db)
-	AdviceRoutes.AdviceUserRoutes(api, db)
-	FaqRoutes.FaqQuestionUserRoutes(api, db)
-	ArticleRoutes.ArticleUserRoutes(api, db)
-	PostRoutes.PostUserRoutes(api, db)
-	QuestionnaireRoutes.QuestionnaireQuestionUserRoutes(api, db)
-	NotificationRoutes.NotificationUserRoutes(api, db)
+	QouteRoutes.AllQuoteRoutes(api, db)
+	AdviceRoutes.AllAdviceRoutes(api, db)
+	FaqRoutes.AllFaqQuestionRoutes(api, db)
+	ArticleRoutes.AllArticleRoutes(api, db)
+	PostRoutes.AllPostRoutes(api, db)
+	QuestionnaireRoutes.AllQuestionnaireQuestionRoutes(api, db)
+	NotificationRoutes.AllNotificationRoutes(api, db)
 
 }
 

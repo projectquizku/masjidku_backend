@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func PostUserRoutes(api fiber.Router, db *gorm.DB) {
+func AllPostRoutes(api fiber.Router, db *gorm.DB) {
 	ctrl := controller.NewPostController(db)
 
 	user := api.Group("/posts")

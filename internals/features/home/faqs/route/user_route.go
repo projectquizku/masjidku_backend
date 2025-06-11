@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func FaqQuestionUserRoutes(user fiber.Router, db *gorm.DB) {
+func AllFaqQuestionRoutes(user fiber.Router, db *gorm.DB) {
 	faqQuestionCtrl := controller.NewFaqQuestionController(db)
 	faqAnswerCtrl := controller.NewFaqAnswerController(db)
 
