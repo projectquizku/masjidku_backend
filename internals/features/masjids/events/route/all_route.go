@@ -1,7 +1,7 @@
 package route
 
 import (
-	"masjidku_backend/internals/features/masjids/lectures/events/controller"
+	"masjidku_backend/internals/features/masjids/events/controller"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"

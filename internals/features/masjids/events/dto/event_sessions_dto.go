@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"masjidku_backend/internals/features/masjids/lectures/events/model"
+	"masjidku_backend/internals/features/masjids/events/model"
 	"time"
 
 	"github.com/google/uuid"

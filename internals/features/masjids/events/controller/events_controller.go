@@ -2,8 +2,8 @@ package controller
 
 import (
 	"log"
-	"masjidku_backend/internals/features/masjids/lectures/events/dto"
-	"masjidku_backend/internals/features/masjids/lectures/events/model"
+	"masjidku_backend/internals/features/masjids/events/dto"
+	"masjidku_backend/internals/features/masjids/events/model"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"

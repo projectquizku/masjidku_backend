@@ -3,6 +3,7 @@ package controller
 import (
 	"masjidku_backend/internals/features/masjids/lecture_sessions/main/dto"
 	"masjidku_backend/internals/features/masjids/lecture_sessions/main/model"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -108,4 +109,63 @@ func (ctrl *UserLectureSessionController) DeleteUserLectureSession(c *fiber.Ctx)
 	}
 
 	return c.SendStatus(fiber.StatusNoContent)
+}
+
+
+func (ctrl *UserLectureSessionController) GetLectureSessionsWithUserProgress(c *fiber.Ctx) error {
+	userIDRaw := c.Locals("user_id")
+	masjidID := c.Query("masjid_id")
+	if masjidID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Parameter masjid_id wajib diisi")
+	}
+
+	type Result struct {
+		model.LectureSessionModel
+		UserLectureSessionAttendanceStatus *int       `json:"attendance_status,omitempty"`
+		UserLectureSessionGradeResult      *float64   `json:"grade_result,omitempty"`
+		UserLectureSessionIsRegistered     *bool      `json:"is_registered,omitempty"`
+		UserLectureSessionHasPaid          *bool      `json:"has_paid,omitempty"`
+		UserLectureSessionPaidAmount       *int       `json:"paid_amount,omitempty"`
+		UserLectureSessionPaymentTime      *time.Time `json:"payment_time,omitempty"`
+		UserLectureSessionCreatedAt        *time.Time `json:"user_session_created_at,omitempty"`
+	}
+
+	var results []Result
+	userID := ""
+	if userIDRaw != nil {
+		userID = userIDRaw.(string)
+	}
+	query := ctrl.DB.Table("lecture_sessions AS ls").
+		Select([]string{
+			"ls.*",
+			"uls.user_lecture_session_attendance_status",
+			"uls.user_lecture_session_grade_result",
+			"uls.user_lecture_session_is_registered",
+			"uls.user_lecture_session_has_paid",
+			"uls.user_lecture_session_paid_amount",
+			"uls.user_lecture_session_payment_time",
+			"uls.user_lecture_session_created_at",
+		})
+
+	if userID != "" {
+		query = query.Joins(`
+		LEFT JOIN user_lecture_sessions uls 
+		ON uls.user_lecture_session_lecture_session_id = ls.lecture_session_id 
+		AND uls.user_lecture_session_user_id = ?
+	`, userID)
+	} else {
+		query = query.Joins("LEFT JOIN user_lecture_sessions uls ON false") // biar tetap select kolomnya, tapi tidak join
+	}
+
+	query = query.Where("ls.lecture_session_masjid_id = ?", masjidID).
+		Order("ls.lecture_session_start_time ASC")
+
+	if err := query.Scan(&results).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Gagal mengambil data sesi kajian")
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Berhasil mengambil daftar sesi kajian (dengan progress jika login)",
+		"data":    results,
+	})
 }

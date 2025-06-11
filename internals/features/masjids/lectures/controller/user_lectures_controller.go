@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"masjidku_backend/internals/features/masjids/lectures/lectures/dto"
-	"masjidku_backend/internals/features/masjids/lectures/lectures/model"
+	"masjidku_backend/internals/features/masjids/lectures/dto"
+	"masjidku_backend/internals/features/masjids/lectures/model"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -159,3 +159,5 @@ func (ctrl *UserLectureController) GetUserLectureStats(c *fiber.Ctx) error {
 		"data":    results,
 	})
 }
+
+
