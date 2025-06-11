@@ -20,18 +20,22 @@ func NewUserLectureSessionController(db *gorm.DB) *UserLectureSessionController 
 func (ctrl *UserLectureSessionController) CreateUserLectureSession(c *fiber.Ctx) error {
 	var req dto.CreateUserLectureSessionRequest
 	if err := c.BodyParser(&req); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+		return fiber.NewError(fiber.StatusBadRequest, "Permintaan tidak valid")
 	}
 
 	newRecord := model.UserLectureSessionModel{
-		UserLectureSessionStatusAttendance: req.UserLectureSessionStatusAttendance,
+		UserLectureSessionAttendanceStatus: req.UserLectureSessionAttendanceStatus,
 		UserLectureSessionGradeResult:      req.UserLectureSessionGradeResult,
 		UserLectureSessionLectureSessionID: req.UserLectureSessionLectureSessionID,
 		UserLectureSessionUserID:           req.UserLectureSessionUserID,
+		UserLectureSessionIsRegistered:     req.UserLectureSessionIsRegistered,
+		UserLectureSessionHasPaid:          req.UserLectureSessionHasPaid,
+		UserLectureSessionPaidAmount:       req.UserLectureSessionPaidAmount,
+		UserLectureSessionPaymentTime:      req.UserLectureSessionPaymentTime,
 	}
 
 	if err := ctrl.DB.Create(&newRecord).Error; err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to create user lecture session")
+		return fiber.NewError(fiber.StatusInternalServerError, "Gagal membuat user lecture session")
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(dto.ToUserLectureSessionDTO(newRecord))
@@ -67,23 +71,29 @@ func (ctrl *UserLectureSessionController) GetUserLectureSessionByID(c *fiber.Ctx
 // UPDATE
 func (ctrl *UserLectureSessionController) UpdateUserLectureSession(c *fiber.Ctx) error {
 	id := c.Params("id")
+
 	var record model.UserLectureSessionModel
 	if err := ctrl.DB.First(&record, "user_lecture_session_id = ?", id).Error; err != nil {
-		return fiber.NewError(fiber.StatusNotFound, "Record not found")
+		return fiber.NewError(fiber.StatusNotFound, "Data tidak ditemukan")
 	}
 
 	var req dto.CreateUserLectureSessionRequest
 	if err := c.BodyParser(&req); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+		return fiber.NewError(fiber.StatusBadRequest, "Permintaan tidak valid")
 	}
 
-	record.UserLectureSessionStatusAttendance = req.UserLectureSessionStatusAttendance
+	// Update field
+	record.UserLectureSessionAttendanceStatus = req.UserLectureSessionAttendanceStatus
 	record.UserLectureSessionGradeResult = req.UserLectureSessionGradeResult
 	record.UserLectureSessionLectureSessionID = req.UserLectureSessionLectureSessionID
 	record.UserLectureSessionUserID = req.UserLectureSessionUserID
+	record.UserLectureSessionIsRegistered = req.UserLectureSessionIsRegistered
+	record.UserLectureSessionHasPaid = req.UserLectureSessionHasPaid
+	record.UserLectureSessionPaidAmount = req.UserLectureSessionPaidAmount
+	record.UserLectureSessionPaymentTime = req.UserLectureSessionPaymentTime
 
 	if err := ctrl.DB.Save(&record).Error; err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to update")
+		return fiber.NewError(fiber.StatusInternalServerError, "Gagal memperbarui data user lecture session")
 	}
 
 	return c.JSON(dto.ToUserLectureSessionDTO(record))
