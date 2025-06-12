@@ -111,33 +111,67 @@ func (ctrl *UserLectureSessionController) DeleteUserLectureSession(c *fiber.Ctx)
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
-
 func (ctrl *UserLectureSessionController) GetLectureSessionsWithUserProgress(c *fiber.Ctx) error {
 	userIDRaw := c.Locals("user_id")
+	userID := ""
+	if userIDRaw != nil {
+		userID = userIDRaw.(string)
+	}
+
 	masjidID := c.Query("masjid_id")
 	if masjidID == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "Parameter masjid_id wajib diisi")
 	}
 
 	type Result struct {
-		model.LectureSessionModel
-		UserLectureSessionAttendanceStatus *int       `json:"attendance_status,omitempty"`
-		UserLectureSessionGradeResult      *float64   `json:"grade_result,omitempty"`
-		UserLectureSessionIsRegistered     *bool      `json:"is_registered,omitempty"`
-		UserLectureSessionHasPaid          *bool      `json:"has_paid,omitempty"`
-		UserLectureSessionPaidAmount       *int       `json:"paid_amount,omitempty"`
-		UserLectureSessionPaymentTime      *time.Time `json:"payment_time,omitempty"`
-		UserLectureSessionCreatedAt        *time.Time `json:"user_session_created_at,omitempty"`
+		LectureSessionID                     string     `json:"lecture_session_id"`
+		LectureSessionTitle                  string     `json:"lecture_session_title"`
+		LectureSessionDescription            string     `json:"lecture_session_description"`
+		LectureSessionTeacherID              string     `json:"lecture_session_teacher_id"`
+		LectureSessionTeacherName            string     `json:"lecture_session_teacher_name"` // ← nama user dari users.user_name
+		LectureSessionStartTime              time.Time  `json:"lecture_session_start_time"`
+		LectureSessionEndTime                time.Time  `json:"lecture_session_end_time"`
+		LectureSessionPlace                  string     `json:"lecture_session_place"`
+		LectureSessionLectureID              string     `json:"lecture_session_lecture_id"`
+		LectureSessionMasjidID               string     `json:"lecture_session_masjid_id"`
+		LectureSessionCapacity               int        `json:"lecture_session_capacity"`
+		LectureSessionIsPublic               bool       `json:"lecture_session_is_public"`
+		LectureSessionIsRegistrationRequired bool       `json:"lecture_session_is_registration_required"`
+		LectureSessionIsPaid                 bool       `json:"lecture_session_is_paid"`
+		LectureSessionPrice                  *int       `json:"lecture_session_price,omitempty"`
+		LectureSessionPaymentDeadline        *time.Time `json:"lecture_session_payment_deadline,omitempty"`
+		LectureSessionCreatedAt              time.Time  `json:"lecture_session_created_at"`
+
+		UserLectureSessionAttendanceStatus *int       `json:"user_lecture_session_attendance_status,omitempty"`
+		UserLectureSessionGradeResult      *float64   `json:"user_lecture_session_grade_result,omitempty"`
+		UserLectureSessionIsRegistered     *bool      `json:"user_lecture_session_is_registered,omitempty"`
+		UserLectureSessionHasPaid          *bool      `json:"user_lecture_session_has_paid,omitempty"`
+		UserLectureSessionPaidAmount       *int       `json:"user_lecture_session_paid_amount,omitempty"`
+		UserLectureSessionPaymentTime      *time.Time `json:"user_lecture_session_payment_time,omitempty"`
+		UserLectureSessionCreatedAt        *time.Time `json:"user_lecture_session_user_session_created_at,omitempty"`
 	}
 
 	var results []Result
-	userID := ""
-	if userIDRaw != nil {
-		userID = userIDRaw.(string)
-	}
+
 	query := ctrl.DB.Table("lecture_sessions AS ls").
 		Select([]string{
-			"ls.*",
+			"ls.lecture_session_id",
+			"ls.lecture_session_title",
+			"ls.lecture_session_description",
+			"ls.lecture_session_teacher_id",
+			"u.user_name AS lecture_session_teacher_name", // ← ambil dari tabel users
+			"ls.lecture_session_start_time",
+			"ls.lecture_session_end_time",
+			"ls.lecture_session_place",
+			"ls.lecture_session_lecture_id",
+			"ls.lecture_session_masjid_id",
+			"ls.lecture_session_capacity",
+			"ls.lecture_session_is_public",
+			"ls.lecture_session_is_registration_required",
+			"ls.lecture_session_is_paid",
+			"ls.lecture_session_price",
+			"ls.lecture_session_payment_deadline",
+			"ls.lecture_session_created_at",
 			"uls.user_lecture_session_attendance_status",
 			"uls.user_lecture_session_grade_result",
 			"uls.user_lecture_session_is_registered",
@@ -145,20 +179,20 @@ func (ctrl *UserLectureSessionController) GetLectureSessionsWithUserProgress(c *
 			"uls.user_lecture_session_paid_amount",
 			"uls.user_lecture_session_payment_time",
 			"uls.user_lecture_session_created_at",
-		})
+		}).
+		Joins("LEFT JOIN users u ON u.id = ls.lecture_session_teacher_id").
+		Where("ls.lecture_session_masjid_id = ?", masjidID).
+		Order("ls.lecture_session_start_time ASC")
 
 	if userID != "" {
 		query = query.Joins(`
-		LEFT JOIN user_lecture_sessions uls 
-		ON uls.user_lecture_session_lecture_session_id = ls.lecture_session_id 
-		AND uls.user_lecture_session_user_id = ?
-	`, userID)
+			LEFT JOIN user_lecture_sessions uls 
+			ON uls.user_lecture_session_lecture_session_id = ls.lecture_session_id 
+			AND uls.user_lecture_session_user_id = ?
+		`, userID)
 	} else {
-		query = query.Joins("LEFT JOIN user_lecture_sessions uls ON false") // biar tetap select kolomnya, tapi tidak join
+		query = query.Joins("LEFT JOIN user_lecture_sessions uls ON false")
 	}
-
-	query = query.Where("ls.lecture_session_masjid_id = ?", masjidID).
-		Order("ls.lecture_session_start_time ASC")
 
 	if err := query.Scan(&results).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Gagal mengambil data sesi kajian")
