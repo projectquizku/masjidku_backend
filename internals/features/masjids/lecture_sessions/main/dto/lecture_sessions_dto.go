@@ -8,26 +8,31 @@ import (
 )
 
 // =========================
+// Struct tambahan
+// =========================
+
+// =========================
 // Response DTO
 // =========================
 
 type LectureSessionDTO struct {
-	LectureSessionID                     uuid.UUID  `json:"lecture_session_id"`
-	LectureSessionTitle                  string     `json:"lecture_session_title"`
-	LectureSessionDescription            string     `json:"lecture_session_description,omitempty"`
-	LectureSessionTeacherID              uuid.UUID  `json:"lecture_session_teacher_id"`
-	LectureSessionStartTime              time.Time  `json:"lecture_session_start_time"`
-	LectureSessionEndTime                time.Time  `json:"lecture_session_end_time"`
-	LectureSessionPlace                  *string    `json:"lecture_session_place,omitempty"`
-	LectureSessionLectureID              *uuid.UUID `json:"lecture_session_lecture_id,omitempty"`
-	LectureSessionMasjidID               uuid.UUID  `json:"lecture_session_masjid_id"`
-	LectureSessionCapacity               *int       `json:"lecture_session_capacity,omitempty"`
-	LectureSessionIsPublic               bool       `json:"lecture_session_is_public"`
-	LectureSessionIsRegistrationRequired bool       `json:"lecture_session_is_registration_required"`
-	LectureSessionIsPaid                 bool       `json:"lecture_session_is_paid"`
-	LectureSessionPrice                  *int       `json:"lecture_session_price,omitempty"`
-	LectureSessionPaymentDeadline        *time.Time `json:"lecture_session_payment_deadline,omitempty"`
-	LectureSessionCreatedAt              time.Time  `json:"lecture_session_created_at"`
+	LectureSessionID                     uuid.UUID    `json:"lecture_session_id"`
+	LectureSessionTitle                  string       `json:"lecture_session_title"`
+	LectureSessionDescription            string       `json:"lecture_session_description,omitempty"`
+	LectureSessionTeacher                JSONBTeacher `json:"lecture_session_teacher"`
+	LectureSessionImageURL               *string      `json:"lecture_session_image_url,omitempty"`
+	LectureSessionStartTime              time.Time    `json:"lecture_session_start_time"`
+	LectureSessionEndTime                time.Time    `json:"lecture_session_end_time"`
+	LectureSessionPlace                  *string      `json:"lecture_session_place,omitempty"`
+	LectureSessionLectureID              *uuid.UUID   `json:"lecture_session_lecture_id,omitempty"`
+	LectureSessionMasjidID               uuid.UUID    `json:"lecture_session_masjid_id"`
+	LectureSessionCapacity               *int         `json:"lecture_session_capacity,omitempty"`
+	LectureSessionIsPublic               bool         `json:"lecture_session_is_public"`
+	LectureSessionIsRegistrationRequired bool         `json:"lecture_session_is_registration_required"`
+	LectureSessionIsPaid                 bool         `json:"lecture_session_is_paid"`
+	LectureSessionPrice                  *int         `json:"lecture_session_price,omitempty"`
+	LectureSessionPaymentDeadline        *time.Time   `json:"lecture_session_payment_deadline,omitempty"`
+	LectureSessionCreatedAt              time.Time    `json:"lecture_session_created_at"`
 }
 
 // =========================
@@ -35,45 +40,35 @@ type LectureSessionDTO struct {
 // =========================
 
 type CreateLectureSessionRequest struct {
-	LectureSessionTitle                  string     `json:"lecture_session_title" validate:"required,min=3"`
-	LectureSessionDescription            string     `json:"lecture_session_description,omitempty"`
-	LectureSessionStartTime              time.Time  `json:"lecture_session_start_time" validate:"required"`
-	LectureSessionEndTime                time.Time  `json:"lecture_session_end_time" validate:"required"`
-	LectureSessionPlace                  *string    `json:"lecture_session_place,omitempty"`
-	LectureSessionLectureID              *uuid.UUID `json:"lecture_session_lecture_id,omitempty"`
-	LectureSessionMasjidID               uuid.UUID  `json:"lecture_session_masjid_id" validate:"required"`
-	LectureSessionCapacity               *int       `json:"lecture_session_capacity,omitempty"`
-	LectureSessionIsPublic               bool       `json:"lecture_session_is_public"`
-	LectureSessionIsRegistrationRequired bool       `json:"lecture_session_is_registration_required"`
-	LectureSessionIsPaid                 bool       `json:"lecture_session_is_paid"`
-	LectureSessionPrice                  *int       `json:"lecture_session_price,omitempty"`
-	LectureSessionPaymentDeadline        *time.Time `json:"lecture_session_payment_deadline,omitempty"`
+	LectureSessionTitle                  string       `json:"lecture_session_title" validate:"required,min=3"`
+	LectureSessionDescription            string       `json:"lecture_session_description,omitempty"`
+	LectureSessionTeacher                JSONBTeacher `json:"lecture_session_teacher" validate:"required"`
+	LectureSessionImageURL               *string      `json:"lecture_session_image_url,omitempty"`
+	LectureSessionStartTime              time.Time    `json:"lecture_session_start_time" validate:"required"`
+	LectureSessionEndTime                time.Time    `json:"lecture_session_end_time" validate:"required"`
+	LectureSessionPlace                  *string      `json:"lecture_session_place,omitempty"`
+	LectureSessionLectureID              *uuid.UUID   `json:"lecture_session_lecture_id,omitempty"`
+	LectureSessionMasjidID               uuid.UUID    `json:"lecture_session_masjid_id" validate:"required"`
+	LectureSessionCapacity               *int         `json:"lecture_session_capacity,omitempty"`
+	LectureSessionIsPublic               bool         `json:"lecture_session_is_public"`
+	LectureSessionIsRegistrationRequired bool         `json:"lecture_session_is_registration_required"`
+	LectureSessionIsPaid                 bool         `json:"lecture_session_is_paid"`
+	LectureSessionPrice                  *int         `json:"lecture_session_price,omitempty"`
+	LectureSessionPaymentDeadline        *time.Time   `json:"lecture_session_payment_deadline,omitempty"`
 }
 
-type UpdateLectureSessionRequest struct {
-	LectureSessionTitle                  string     `json:"lecture_session_title" validate:"required,min=3"`
-	LectureSessionDescription            string     `json:"lecture_session_description,omitempty"`
-	LectureSessionStartTime              time.Time  `json:"lecture_session_start_time" validate:"required"`
-	LectureSessionEndTime                time.Time  `json:"lecture_session_end_time" validate:"required"`
-	LectureSessionPlace                  *string    `json:"lecture_session_place,omitempty"`
-	LectureSessionLectureID              *uuid.UUID `json:"lecture_session_lecture_id,omitempty"`
-	LectureSessionMasjidID               uuid.UUID  `json:"lecture_session_masjid_id" validate:"required"`
-	LectureSessionCapacity               *int       `json:"lecture_session_capacity,omitempty"`
-	LectureSessionIsPublic               bool       `json:"lecture_session_is_public"`
-	LectureSessionIsRegistrationRequired bool       `json:"lecture_session_is_registration_required"`
-	LectureSessionIsPaid                 bool       `json:"lecture_session_is_paid"`
-	LectureSessionPrice                  *int       `json:"lecture_session_price,omitempty"`
-	LectureSessionPaymentDeadline        *time.Time `json:"lecture_session_payment_deadline,omitempty"`
-}
+type UpdateLectureSessionRequest = CreateLectureSessionRequest
 
 // =========================
 // Request → Model converter
 // =========================
 
-func (r CreateLectureSessionRequest) ToModel(teacherID uuid.UUID) model.LectureSessionModel {
+func (r CreateLectureSessionRequest) ToModel() model.LectureSessionModel {
 	return model.LectureSessionModel{
 		LectureSessionTitle:                  r.LectureSessionTitle,
 		LectureSessionDescription:            r.LectureSessionDescription,
+		LectureSessionTeacher:                r.LectureSessionTeacher.ToModel(), // 👈 Panggil converter eksplisit
+		LectureSessionImageURL:               r.LectureSessionImageURL,
 		LectureSessionStartTime:              r.LectureSessionStartTime,
 		LectureSessionEndTime:                r.LectureSessionEndTime,
 		LectureSessionPlace:                  r.LectureSessionPlace,
@@ -85,7 +80,6 @@ func (r CreateLectureSessionRequest) ToModel(teacherID uuid.UUID) model.LectureS
 		LectureSessionIsPaid:                 r.LectureSessionIsPaid,
 		LectureSessionPrice:                  r.LectureSessionPrice,
 		LectureSessionPaymentDeadline:        r.LectureSessionPaymentDeadline,
-		LectureSessionTeacherID:              teacherID,
 	}
 }
 
@@ -98,7 +92,8 @@ func ToLectureSessionDTO(m model.LectureSessionModel) LectureSessionDTO {
 		LectureSessionID:                     m.LectureSessionID,
 		LectureSessionTitle:                  m.LectureSessionTitle,
 		LectureSessionDescription:            m.LectureSessionDescription,
-		LectureSessionTeacherID:              m.LectureSessionTeacherID,
+		LectureSessionTeacher:                FromModel(m.LectureSessionTeacher),
+		LectureSessionImageURL:               m.LectureSessionImageURL,
 		LectureSessionStartTime:              m.LectureSessionStartTime,
 		LectureSessionEndTime:                m.LectureSessionEndTime,
 		LectureSessionPlace:                  m.LectureSessionPlace,

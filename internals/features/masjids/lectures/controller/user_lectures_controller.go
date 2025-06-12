@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"masjidku_backend/internals/features/masjids/lectures/dto"
 	"masjidku_backend/internals/features/masjids/lectures/model"
 	"time"
@@ -88,15 +89,25 @@ func (ctrl *UserLectureController) GetUsersByLecture(c *fiber.Ctx) error {
 
 func (ctrl *UserLectureController) GetUserLectureStats(c *fiber.Ctx) error {
 	userIDRaw := c.Locals("user_id")
+	userID := ""
+	if userIDRaw != nil {
+		userID = userIDRaw.(string)
+	}
+
 	masjidID := c.Query("masjid_id")
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
 	month := c.Query("month")
 	year := c.Query("year")
-	specificDate := c.Query("specific_date") // format: YYYY-MM-DD
+	specificDate := c.Query("specific_date")
 
 	if masjidID == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "Parameter masjid_id wajib diisi")
+	}
+
+	type Teacher struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
 	}
 
 	type Result struct {
@@ -105,30 +116,36 @@ func (ctrl *UserLectureController) GetUserLectureStats(c *fiber.Ctx) error {
 		UserLectureCreatedAt         *time.Time `json:"user_lecture_created_at,omitempty"`
 		TotalLectureSessions         int        `json:"total_lecture_sessions"`
 		CompleteTotalLectureSessions *int       `json:"complete_total_lecture_sessions,omitempty"`
+		LectureTeachers              []Teacher  `json:"lecture_teachers,omitempty"`
 	}
 
-	var results []Result
-	userID := ""
-	if userIDRaw != nil {
-		userID = userIDRaw.(string)
-	}
-
-	// Gunakan total_lecture_sessions langsung dari tabel lectures
+	// Step 1: Ambil semua data dari tabel lectures (termasuk JSONB pengajar)
 	query := ctrl.DB.Table("lectures AS l").
 		Select([]string{
 			"l.*",
+			"l.total_lecture_sessions",
+		}).
+		Where("l.lecture_masjid_id = ?", masjidID)
+
+	if userID != "" {
+		query = query.Select(append(query.Statement.Selects,
 			"ul.user_lecture_grade_result",
 			"ul.user_lecture_created_at",
 			"ul.user_lecture_total_completed_sessions AS complete_total_lecture_sessions",
-		}).
-		Joins("LEFT JOIN user_lectures ul ON ul.user_lecture_lecture_id = l.lecture_id")
-
-	if userID != "" {
-		query = query.Where("ul.user_lecture_user_id = ? OR ul.user_lecture_user_id IS NULL", userID)
+		)).Joins(`
+			LEFT JOIN user_lectures ul 
+			ON ul.user_lecture_lecture_id = l.lecture_id 
+			AND ul.user_lecture_user_id = ?
+		`, userID)
+	} else {
+		query = query.Select(append(query.Statement.Selects,
+			"NULL AS user_lecture_grade_result",
+			"NULL AS user_lecture_created_at",
+			"NULL AS complete_total_lecture_sessions",
+		)).Joins("LEFT JOIN user_lectures ul ON false")
 	}
 
-	query = query.Where("l.lecture_masjid_id = ?", masjidID)
-
+	// Filter waktu
 	switch {
 	case specificDate != "":
 		query = query.Where("DATE(l.lecture_created_at) = ?", specificDate)
@@ -145,13 +162,42 @@ func (ctrl *UserLectureController) GetUserLectureStats(c *fiber.Ctx) error {
 
 	query = query.Order("l.lecture_created_at DESC")
 
-	if err := query.Scan(&results).Error; err != nil {
+	// Step 2: Eksekusi dan parsing hasil
+	type rawLecture struct {
+		model.LectureModel
+		UserLectureGradeResult       *int       `json:"user_lecture_grade_result"`
+		UserLectureCreatedAt         *time.Time `json:"user_lecture_created_at"`
+		TotalLectureSessions         int        `json:"total_lecture_sessions"`
+		CompleteTotalLectureSessions *int       `json:"complete_total_lecture_sessions"`
+	}
+
+	var rawLectures []rawLecture
+	if err := query.Scan(&rawLectures).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Gagal mengambil data kajian")
 	}
 
+	// Step 3: Unmarshal JSONB teachers
+	var results []Result
+	for _, r := range rawLectures {
+		var teachers []Teacher
+		if r.LectureTeachers != nil {
+			_ = json.Unmarshal(r.LectureTeachers, &teachers)
+		}
+
+		results = append(results, Result{
+			LectureModel:                 r.LectureModel,
+			UserLectureGradeResult:       r.UserLectureGradeResult,
+			UserLectureCreatedAt:         r.UserLectureCreatedAt,
+			TotalLectureSessions:         r.TotalLectureSessions,
+			CompleteTotalLectureSessions: r.CompleteTotalLectureSessions,
+			LectureTeachers:              teachers,
+		})
+	}
+
+	// Step 4: Response
 	message := "Berhasil mengambil daftar kajian"
 	if userID != "" {
-		message += " (dengan progress jika ada)"
+		message += " (dengan progress jika login)"
 	}
 
 	return c.JSON(fiber.Map{
@@ -159,5 +205,3 @@ func (ctrl *UserLectureController) GetUserLectureStats(c *fiber.Ctx) error {
 		"data":    results,
 	})
 }
-
-

@@ -128,7 +128,7 @@ func (ctrl *UserLectureSessionController) GetLectureSessionsWithUserProgress(c *
 		LectureSessionTitle                  string     `json:"lecture_session_title"`
 		LectureSessionDescription            string     `json:"lecture_session_description"`
 		LectureSessionTeacherID              string     `json:"lecture_session_teacher_id"`
-		LectureSessionTeacherName            string     `json:"lecture_session_teacher_name"` // ← nama user dari users.user_name
+		LectureSessionTeacherName            string     `json:"lecture_session_teacher_name"`
 		LectureSessionStartTime              time.Time  `json:"lecture_session_start_time"`
 		LectureSessionEndTime                time.Time  `json:"lecture_session_end_time"`
 		LectureSessionPlace                  string     `json:"lecture_session_place"`
@@ -158,8 +158,8 @@ func (ctrl *UserLectureSessionController) GetLectureSessionsWithUserProgress(c *
 			"ls.lecture_session_id",
 			"ls.lecture_session_title",
 			"ls.lecture_session_description",
-			"ls.lecture_session_teacher_id",
-			"u.user_name AS lecture_session_teacher_name", // ← ambil dari tabel users
+			"ls.lecture_session_teacher->>'id' AS lecture_session_teacher_id",
+			"ls.lecture_session_teacher->>'name' AS lecture_session_teacher_name",
 			"ls.lecture_session_start_time",
 			"ls.lecture_session_end_time",
 			"ls.lecture_session_place",
@@ -180,7 +180,6 @@ func (ctrl *UserLectureSessionController) GetLectureSessionsWithUserProgress(c *
 			"uls.user_lecture_session_payment_time",
 			"uls.user_lecture_session_created_at",
 		}).
-		Joins("LEFT JOIN users u ON u.id = ls.lecture_session_teacher_id").
 		Where("ls.lecture_session_masjid_id = ?", masjidID).
 		Order("ls.lecture_session_start_time ASC")
 
