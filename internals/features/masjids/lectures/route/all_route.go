@@ -21,4 +21,8 @@ func AllLectureRoutes(api fiber.Router, db *gorm.DB) {
 	// 📌 Get progress for logged in user (user_id from JWT token)
 	userLecture.Get("/with-progress", ctrl.GetUserLectureStats)
 
+	// 🧑‍🏫 Route untuk user_lecture_sessions
+	userLectureSessions := api.Group("/user-lecture-sessions")
+	userLectureSessions.Get("/with-progress", ctrl.GetUserLecturesWithSessionsProgress)
+
 }

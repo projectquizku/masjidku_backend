@@ -205,3 +205,182 @@ func (ctrl *UserLectureController) GetUserLectureStats(c *fiber.Ctx) error {
 		"data":    results,
 	})
 }
+
+
+func (ctrl *UserLectureController) GetUserLecturesWithSessionsProgress(c *fiber.Ctx) error {
+	userID := ""
+	if raw := c.Locals("user_id"); raw != nil {
+		userID = raw.(string)
+	}
+
+	masjidID := c.Query("masjid_id")
+	lectureID := c.Query("lecture_id")
+
+	if masjidID == "" && lectureID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Parameter masjid_id atau lecture_id wajib diisi salah satu")
+	}
+
+	// Struct internal
+	type Teacher struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	}
+	type Session struct {
+		LectureSessionID                     string     `json:"lecture_session_id"`
+		LectureSessionTitle                  string     `json:"lecture_session_title"`
+		LectureSessionDescription            string     `json:"lecture_session_description"`
+		LectureSessionTeacherID              string     `json:"lecture_session_teacher_id"`
+		LectureSessionTeacherName            string     `json:"lecture_session_teacher_name"`
+		LectureSessionStartTime              time.Time  `json:"lecture_session_start_time"`
+		LectureSessionEndTime                time.Time  `json:"lecture_session_end_time"`
+		LectureSessionPlace                  string     `json:"lecture_session_place"`
+		LectureSessionLectureID              string     `json:"lecture_session_lecture_id"`
+		LectureSessionMasjidID               string     `json:"lecture_session_masjid_id"`
+		LectureSessionCapacity               int        `json:"lecture_session_capacity"`
+		LectureSessionIsPublic               bool       `json:"lecture_session_is_public"`
+		LectureSessionIsRegistrationRequired bool       `json:"lecture_session_is_registration_required"`
+		LectureSessionIsPaid                 bool       `json:"lecture_session_is_paid"`
+		LectureSessionPrice                  *int       `json:"lecture_session_price,omitempty"`
+		LectureSessionPaymentDeadline        *time.Time `json:"lecture_session_payment_deadline,omitempty"`
+		LectureSessionCreatedAt              time.Time  `json:"lecture_session_created_at"`
+		UserLectureSessionAttendanceStatus   *int       `json:"user_lecture_session_attendance_status,omitempty"`
+		UserLectureSessionGradeResult        *float64   `json:"user_lecture_session_grade_result,omitempty"`
+		UserLectureSessionIsRegistered       *bool      `json:"user_lecture_session_is_registered,omitempty"`
+		UserLectureSessionHasPaid            *bool      `json:"user_lecture_session_has_paid,omitempty"`
+		UserLectureSessionPaidAmount         *int       `json:"user_lecture_session_paid_amount,omitempty"`
+		UserLectureSessionPaymentTime        *time.Time `json:"user_lecture_session_payment_time,omitempty"`
+		UserLectureSessionCreatedAt          *time.Time `json:"user_lecture_session_created_at,omitempty"`
+	}
+	type Result struct {
+		model.LectureModel
+		UserLectureGradeResult       *int       `json:"user_lecture_grade_result,omitempty"`
+		UserLectureCreatedAt         *time.Time `json:"user_lecture_created_at,omitempty"`
+		TotalLectureSessions         int        `json:"total_lecture_sessions"`
+		CompleteTotalLectureSessions *int       `json:"complete_total_lecture_sessions,omitempty"`
+		LectureTeachers              []Teacher  `json:"lecture_teachers,omitempty"`
+		Sessions                     []Session  `json:"sessions,omitempty"`
+	}
+
+	// Step 1: Fetch lectures
+	var lecturesRaw []struct {
+		model.LectureModel
+		UserLectureGradeResult       *int       `json:"user_lecture_grade_result"`
+		UserLectureCreatedAt         *time.Time `json:"user_lecture_created_at"`
+		TotalLectureSessions         int        `json:"total_lecture_sessions"`
+		CompleteTotalLectureSessions *int       `json:"complete_total_lecture_sessions"`
+	}
+
+	lectureQuery := ctrl.DB.Table("lectures AS l").
+		Select([]string{"l.*", "l.total_lecture_sessions"})
+
+	if userID != "" {
+		lectureQuery = lectureQuery.Select(append(lectureQuery.Statement.Selects,
+			"ul.user_lecture_grade_result",
+			"ul.user_lecture_created_at",
+			"ul.user_lecture_total_completed_sessions AS complete_total_lecture_sessions",
+		)).Joins(`
+			LEFT JOIN user_lectures ul 
+			ON ul.user_lecture_lecture_id = l.lecture_id 
+			AND ul.user_lecture_user_id = ?
+		`, userID)
+	} else {
+		lectureQuery = lectureQuery.Select(append(lectureQuery.Statement.Selects,
+			"NULL AS user_lecture_grade_result",
+			"NULL AS user_lecture_created_at",
+			"NULL AS complete_total_lecture_sessions",
+		)).Joins("LEFT JOIN user_lectures ul ON false")
+	}
+
+	// Apply filter masjid_id dan/atau lecture_id
+	if masjidID != "" {
+		lectureQuery = lectureQuery.Where("l.lecture_masjid_id = ?", masjidID)
+	}
+	if lectureID != "" {
+		lectureQuery = lectureQuery.Where("l.lecture_id = ?", lectureID)
+	}
+
+	if err := lectureQuery.Scan(&lecturesRaw).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Gagal mengambil data kajian")
+	}
+
+	// Step 2: Fetch sessions
+	var allSessions []Session
+	sessionQuery := ctrl.DB.Table("lecture_sessions AS ls").
+		Select([]string{
+			"ls.lecture_session_id",
+			"ls.lecture_session_title",
+			"ls.lecture_session_description",
+			"ls.lecture_session_teacher->>'id' AS lecture_session_teacher_id",
+			"ls.lecture_session_teacher->>'name' AS lecture_session_teacher_name",
+			"ls.lecture_session_start_time",
+			"ls.lecture_session_end_time",
+			"ls.lecture_session_place",
+			"ls.lecture_session_lecture_id",
+			"ls.lecture_session_masjid_id",
+			"ls.lecture_session_capacity",
+			"ls.lecture_session_is_public",
+			"ls.lecture_session_is_registration_required",
+			"ls.lecture_session_is_paid",
+			"ls.lecture_session_price",
+			"ls.lecture_session_payment_deadline",
+			"ls.lecture_session_created_at",
+			"uls.user_lecture_session_attendance_status",
+			"uls.user_lecture_session_grade_result",
+			"uls.user_lecture_session_is_registered",
+			"uls.user_lecture_session_has_paid",
+			"uls.user_lecture_session_paid_amount",
+			"uls.user_lecture_session_payment_time",
+			"uls.user_lecture_session_created_at",
+		})
+
+	if userID != "" {
+		sessionQuery = sessionQuery.Joins(`
+			LEFT JOIN user_lecture_sessions uls 
+			ON uls.user_lecture_session_lecture_session_id = ls.lecture_session_id 
+			AND uls.user_lecture_session_user_id = ?
+		`, userID)
+	} else {
+		sessionQuery = sessionQuery.Joins("LEFT JOIN user_lecture_sessions uls ON false")
+	}
+
+	if masjidID != "" {
+		sessionQuery = sessionQuery.Where("ls.lecture_session_masjid_id = ?", masjidID)
+	}
+	if lectureID != "" {
+		sessionQuery = sessionQuery.Where("ls.lecture_session_lecture_id = ?", lectureID)
+	}
+
+	if err := sessionQuery.Scan(&allSessions).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Gagal mengambil sesi kajian")
+	}
+
+	// Step 3: Group sessions by lecture_id
+	sessionMap := make(map[string][]Session)
+	for _, s := range allSessions {
+		sessionMap[s.LectureSessionLectureID] = append(sessionMap[s.LectureSessionLectureID], s)
+	}
+
+	// Step 4: Merge
+	var results []Result
+	for _, r := range lecturesRaw {
+		var teachers []Teacher
+		if r.LectureTeachers != nil {
+			_ = json.Unmarshal(r.LectureTeachers, &teachers)
+		}
+
+		results = append(results, Result{
+			LectureModel:                 r.LectureModel,
+			UserLectureGradeResult:       r.UserLectureGradeResult,
+			UserLectureCreatedAt:         r.UserLectureCreatedAt,
+			TotalLectureSessions:         r.TotalLectureSessions,
+			CompleteTotalLectureSessions: r.CompleteTotalLectureSessions,
+			LectureTeachers:              teachers,
+			Sessions:                     sessionMap[r.LectureID.String()],
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Berhasil mengambil daftar kajian dan sesi (dengan progres user jika login)",
+		"data":    results,
+	})
+}

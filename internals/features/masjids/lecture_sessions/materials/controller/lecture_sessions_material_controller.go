@@ -90,3 +90,68 @@ func (ctrl *LectureSessionsMaterialController) DeleteLectureSessionsMaterial(c *
 
 	return c.SendStatus(fiber.StatusNoContent)
 }
+
+
+
+func (ctrl *LectureSessionsMaterialController) GetContentByLectureID(c *fiber.Ctx) error {
+	lectureID := c.Query("lecture_id")
+	if lectureID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "lecture_id wajib diisi",
+		})
+	}
+
+	var sessionIDs []string
+	if err := ctrl.DB.
+		Table("lecture_sessions").
+		Where("lecture_session_lecture_id = ?", lectureID).
+		Pluck("lecture_session_id", &sessionIDs).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal mengambil sesi kajian",
+			"error":   err.Error(),
+		})
+	}
+
+	var materials []model.LectureSessionsMaterialModel
+	if len(sessionIDs) > 0 {
+		ctrl.DB.
+			Where("lecture_sessions_material_lecture_session_id IN ?", sessionIDs).
+			Find(&materials)
+	}
+
+	var assets []model.LectureSessionsAssetModel
+	if len(sessionIDs) > 0 {
+		ctrl.DB.
+			Where("lecture_sessions_asset_lecture_session_id IN ?", sessionIDs).
+			Find(&assets)
+	}
+
+	var content []map[string]interface{}
+	for _, m := range materials {
+		content = append(content, map[string]interface{}{
+			"type":       "material",
+			"id":         m.LectureSessionsMaterialID,
+			"title":      m.LectureSessionsMaterialTitle,
+			"summary":    m.LectureSessionsMaterialSummary,
+			"transcript": m.LectureSessionsMaterialTranscriptFull,
+			"session_id": m.LectureSessionsMaterialLectureSessionID,
+			"created_at": m.LectureSessionsMaterialCreatedAt,
+		})
+	}
+	for _, a := range assets {
+		content = append(content, map[string]interface{}{
+			"type":       "asset",
+			"id":         a.LectureSessionsAssetID,
+			"title":      a.LectureSessionsAssetTitle,
+			"file_url":   a.LectureSessionsAssetFileURL,
+			"file_type":  a.LectureSessionsAssetFileType,
+			"session_id": a.LectureSessionsAssetLectureSessionID,
+			"created_at": a.LectureSessionsAssetCreatedAt,
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Berhasil mengambil seluruh konten kajian berdasarkan lecture_id",
+		"data":    content,
+	})
+}
