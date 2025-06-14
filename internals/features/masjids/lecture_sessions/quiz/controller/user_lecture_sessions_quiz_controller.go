@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"log"
 	"masjidku_backend/internals/features/masjids/lecture_sessions/quiz/dto"
 	"masjidku_backend/internals/features/masjids/lecture_sessions/quiz/model"
 	"time"
@@ -110,63 +111,92 @@ func (ctrl *UserLectureSessionsQuizController) DeleteUserLectureSessionsQuizByID
 	})
 }
 
-
-
 func (ctrl *UserLectureSessionsQuizController) GetUserQuizWithDetail(c *fiber.Ctx) error {
+	start := time.Now()
+	log.Println("[INFO] GetUserQuizWithDetail called")
+
+	// ========== 1. Ambil User ID dari token ==========
 	userIDRaw := c.Locals("user_id")
 	if userIDRaw == nil {
+		log.Println("[ERROR] Token tidak mengandung user_id")
 		return fiber.NewError(fiber.StatusUnauthorized, "User ID not found in token")
 	}
 	userID := userIDRaw.(string)
+	log.Printf("[INFO] User ID: %s\n", userID)
 
+	// ========== 2. Ambil Query Params ==========
 	lectureID := c.Query("lecture_id")
 	lectureSessionID := c.Query("lecture_session_id")
+	log.Printf("[DEBUG] Query Params => lecture_id: %s | lecture_session_id: %s\n", lectureID, lectureSessionID)
 
+	if lectureID == "" && lectureSessionID == "" {
+		log.Println("[ERROR] Minimal salah satu parameter lecture_id atau lecture_session_id harus diisi")
+		return fiber.NewError(fiber.StatusBadRequest, "Minimal salah satu parameter: lecture_id atau lecture_session_id harus diisi")
+	}
+
+	// ========== 3. Struct Hasil ==========
 	type UserQuizWithDetail struct {
-		UserLectureSessionsQuizID        string    `json:"user_lecture_sessions_quiz_id"`
-		UserLectureSessionsQuizGrade     float64   `json:"user_lecture_sessions_quiz_grade_result"`
-		UserLectureSessionsQuizUserID    string    `json:"user_lecture_sessions_quiz_user_id"`
-		UserLectureSessionsQuizCreatedAt time.Time `json:"user_lecture_sessions_quiz_created_at"`
+		LectureSessionsQuizID               string    `json:"lecture_sessions_quiz_id" gorm:"column:lecture_sessions_quiz_id"`
+		LectureSessionsQuizTitle            string    `json:"lecture_sessions_quiz_title" gorm:"column:lecture_sessions_quiz_title"`
+		LectureSessionsQuizDescription      string    `json:"lecture_sessions_quiz_description" gorm:"column:lecture_sessions_quiz_description"`
+		LectureSessionsQuizLectureSessionID string    `json:"lecture_sessions_quiz_lecture_session_id" gorm:"column:lecture_sessions_quiz_lecture_session_id"`
+		LectureSessionsQuizCreatedAt        time.Time `json:"lecture_sessions_quiz_created_at" gorm:"column:lecture_sessions_quiz_created_at"`
 
-		LectureSessionsQuizID               string    `json:"lecture_sessions_quiz_id"`
-		LectureSessionsQuizTitle            string    `json:"lecture_sessions_quiz_title"`
-		LectureSessionsQuizDescription      string    `json:"lecture_sessions_quiz_description"`
-		LectureSessionsQuizLectureSessionID string    `json:"lecture_sessions_quiz_lecture_session_id"`
-		LectureSessionsQuizCreatedAt        time.Time `json:"lecture_sessions_quiz_created_at"`
+		UserLectureSessionsQuizID        *string    `json:"user_lecture_sessions_quiz_id,omitempty" gorm:"column:user_lecture_sessions_quiz_id"`
+		UserLectureSessionsQuizGrade     *float64   `json:"user_lecture_sessions_quiz_grade_result" gorm:"column:user_lecture_sessions_quiz_grade_result"`
+		UserLectureSessionsQuizUserID    *string    `json:"user_lecture_sessions_quiz_user_id,omitempty" gorm:"column:user_lecture_sessions_quiz_user_id"`
+		UserLectureSessionsQuizCreatedAt *time.Time `json:"user_lecture_sessions_quiz_created_at,omitempty" gorm:"column:user_lecture_sessions_quiz_created_at"`
 	}
 
 	var results []UserQuizWithDetail
 
+	// ========== 4. Query Join ==========
 	query := ctrl.DB.
-		Table("user_lecture_sessions_quiz AS uq").
+		Table("lecture_sessions_quiz AS q").
 		Select(`
-			uq.user_lecture_sessions_quiz_id,
-			uq.user_lecture_sessions_quiz_grade_result,
-			uq.user_lecture_sessions_quiz_user_id,
-			uq.user_lecture_sessions_quiz_created_at,
-
 			q.lecture_sessions_quiz_id,
 			q.lecture_sessions_quiz_title,
 			q.lecture_sessions_quiz_description,
 			q.lecture_sessions_quiz_lecture_session_id,
-			q.lecture_sessions_quiz_created_at
-		`).
-		Joins("JOIN lecture_sessions_quiz AS q ON uq.user_lecture_sessions_quiz_quiz_id = q.lecture_sessions_quiz_id").
-		Where("uq.user_lecture_sessions_quiz_user_id = ?", userID)
+			q.lecture_sessions_quiz_created_at,
+			uq.user_lecture_sessions_quiz_id,
+			uq.user_lecture_sessions_quiz_grade_result,
+			uq.user_lecture_sessions_quiz_user_id,
+			uq.user_lecture_sessions_quiz_created_at`).
+		Joins("JOIN lecture_sessions AS ls ON ls.lecture_session_id = q.lecture_sessions_quiz_lecture_session_id").
+		Joins("LEFT JOIN user_lecture_sessions_quiz AS uq ON uq.user_lecture_sessions_quiz_quiz_id = q.lecture_sessions_quiz_id AND uq.user_lecture_sessions_quiz_user_id = ?", userID)
 
 	if lectureID != "" {
-		query = query.Joins("JOIN lecture_sessions AS ls ON q.lecture_sessions_quiz_lecture_session_id = ls.lecture_session_id").
-			Where("ls.lecture_session_lecture_id = ?", lectureID)
+		query = query.Where("ls.lecture_session_lecture_id = ?", lectureID)
 	}
-
 	if lectureSessionID != "" {
 		query = query.Where("q.lecture_sessions_quiz_lecture_session_id = ?", lectureSessionID)
 	}
 
-	err := query.Scan(&results).Error
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to fetch quiz results with details")
+	// ========== 5. Eksekusi Query ==========
+	if err := query.Scan(&results).Error; err != nil {
+		log.Printf("[ERROR] Gagal ambil data kuis: %v\n", err)
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(results)
+	// ========== 6. Debug Output ==========
+	for i, r := range results {
+		log.Printf("[DEBUG] #%d | QuizID: %s | Title: %s | Grade: %v | UserQuizID: %v | UserID: %v\n",
+			i+1,
+			r.LectureSessionsQuizID,
+			r.LectureSessionsQuizTitle,
+			r.UserLectureSessionsQuizGrade,
+			r.UserLectureSessionsQuizID,
+			r.UserLectureSessionsQuizUserID,
+		)
+	}
+
+	// ========== 7. Return ==========
+	duration := time.Since(start)
+	log.Printf("[SUCCESS] Berhasil ambil %d kuis dalam %s\n", len(results), duration)
+
+	return c.JSON(fiber.Map{
+		"message": "Berhasil ambil kuis dan hasil user",
+		"data":    results,
+	})
 }
