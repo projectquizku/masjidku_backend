@@ -10,7 +10,7 @@ import (
 func LectureSessionsQuizAdminRoutes(admin fiber.Router, db *gorm.DB) {
 	quizCtrl := quizcontroller.NewLectureSessionsQuizController(db)
 
-	quizzes := admin.Group("/lecture-sessions-quizzes")
+	quizzes := admin.Group("/lecture-sessions-quiz")
 	quizzes.Post("/", quizCtrl.CreateQuiz)          // ➕ Tambah quiz
 	quizzes.Get("/", quizCtrl.GetAllQuizzes)        // 📄 Lihat semua quiz
 	quizzes.Get("/:id", quizCtrl.GetQuizByID)       // 🔍 Lihat detail quiz

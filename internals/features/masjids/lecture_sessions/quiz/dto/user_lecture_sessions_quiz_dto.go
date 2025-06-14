@@ -22,7 +22,6 @@ type UserLectureSessionsQuizDTO struct {
 type CreateUserLectureSessionsQuizRequest struct {
 	UserLectureSessionsQuizGrade  float64 `json:"user_lecture_sessions_quiz_grade_result" validate:"required"`
 	UserLectureSessionsQuizQuizID string  `json:"user_lecture_sessions_quiz_quiz_id" validate:"required,uuid"`
-	UserLectureSessionsQuizUserID string  `json:"user_lecture_sessions_quiz_user_id" validate:"required,uuid"`
 }
 
 // ============================

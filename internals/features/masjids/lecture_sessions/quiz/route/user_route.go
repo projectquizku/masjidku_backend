@@ -10,7 +10,7 @@ import (
 func LectureSessionsQuizUserRoutes(user fiber.Router, db *gorm.DB) {
 	quizCtrl := quizcontroller.NewLectureSessionsQuizController(db)
 
-	quizzes := user.Group("/lecture-sessions-quizzes")
+	quizzes := user.Group("/lecture-sessions-quiz")
 	quizzes.Get("/", quizCtrl.GetAllQuizzes)  // 📄 Lihat semua quiz
 	quizzes.Get("/:id", quizCtrl.GetQuizByID) // 🔍 Lihat detail quiz
 
@@ -21,4 +21,5 @@ func LectureSessionsQuizUserRoutes(user fiber.Router, db *gorm.DB) {
 	userQuiz.Get("/", userQuizCtrl.GetAllUserLectureSessionsQuiz)            // 📄 Lihat semua hasil quiz user
 	userQuiz.Get("/filter", userQuizCtrl.GetUserLectureSessionsQuizFiltered) // 🔍 Filter by quiz_id/user_id
 	userQuiz.Delete("/:id", userQuizCtrl.DeleteUserLectureSessionsQuizByID)  // ❌ Hapus hasil quiz
+	userQuiz.Get("/with-detail", userQuizCtrl.GetUserQuizWithDetail)
 }
