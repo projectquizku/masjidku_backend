@@ -115,14 +115,15 @@ func (ctrl *UserLectureSessionsQuizController) GetUserQuizWithDetail(c *fiber.Ct
 	start := time.Now()
 	log.Println("[INFO] GetUserQuizWithDetail called")
 
-	// ========== 1. Ambil User ID dari token ==========
+	// ========== 1. Ambil User ID jika login ==========
+	userID := ""
 	userIDRaw := c.Locals("user_id")
-	if userIDRaw == nil {
-		log.Println("[ERROR] Token tidak mengandung user_id")
-		return fiber.NewError(fiber.StatusUnauthorized, "User ID not found in token")
+	if userIDRaw != nil {
+		userID = userIDRaw.(string)
+		log.Printf("[SUCCESS] User ID stored: %s\n", userID)
+	} else {
+		log.Println("[INFO] Tidak ada user_id (anonim), ambil kuis tanpa progress")
 	}
-	userID := userIDRaw.(string)
-	log.Printf("[INFO] User ID: %s\n", userID)
 
 	// ========== 2. Ambil Query Params ==========
 	lectureID := c.Query("lecture_id")
@@ -143,17 +144,26 @@ func (ctrl *UserLectureSessionsQuizController) GetUserQuizWithDetail(c *fiber.Ct
 		LectureSessionsQuizCreatedAt        time.Time `json:"lecture_sessions_quiz_created_at" gorm:"column:lecture_sessions_quiz_created_at"`
 
 		UserLectureSessionsQuizID        *string    `json:"user_lecture_sessions_quiz_id,omitempty" gorm:"column:user_lecture_sessions_quiz_id"`
-		UserLectureSessionsQuizGrade     *float64   `json:"user_lecture_sessions_quiz_grade_result" gorm:"column:user_lecture_sessions_quiz_grade_result"`
+		UserLectureSessionsQuizGrade     *float64   `json:"user_lecture_sessions_quiz_grade_result,omitempty" gorm:"column:user_lecture_sessions_quiz_grade_result"`
 		UserLectureSessionsQuizUserID    *string    `json:"user_lecture_sessions_quiz_user_id,omitempty" gorm:"column:user_lecture_sessions_quiz_user_id"`
 		UserLectureSessionsQuizCreatedAt *time.Time `json:"user_lecture_sessions_quiz_created_at,omitempty" gorm:"column:user_lecture_sessions_quiz_created_at"`
 	}
 
 	var results []UserQuizWithDetail
 
-	// ========== 4. Query Join ==========
+	// ========== 4. Query Dasar ==========
 	query := ctrl.DB.
 		Table("lecture_sessions_quiz AS q").
 		Select(`
+			q.lecture_sessions_quiz_id,
+			q.lecture_sessions_quiz_title,
+			q.lecture_sessions_quiz_description,
+			q.lecture_sessions_quiz_lecture_session_id,
+			q.lecture_sessions_quiz_created_at`)
+
+	// ========== 5. Tambahkan LEFT JOIN hanya jika user login ==========
+	if userID != "" {
+		query = query.Select(`
 			q.lecture_sessions_quiz_id,
 			q.lecture_sessions_quiz_title,
 			q.lecture_sessions_quiz_description,
@@ -163,8 +173,11 @@ func (ctrl *UserLectureSessionsQuizController) GetUserQuizWithDetail(c *fiber.Ct
 			uq.user_lecture_sessions_quiz_grade_result,
 			uq.user_lecture_sessions_quiz_user_id,
 			uq.user_lecture_sessions_quiz_created_at`).
-		Joins("JOIN lecture_sessions AS ls ON ls.lecture_session_id = q.lecture_sessions_quiz_lecture_session_id").
-		Joins("LEFT JOIN user_lecture_sessions_quiz AS uq ON uq.user_lecture_sessions_quiz_quiz_id = q.lecture_sessions_quiz_id AND uq.user_lecture_sessions_quiz_user_id = ?", userID)
+			Joins("LEFT JOIN user_lecture_sessions_quiz AS uq ON uq.user_lecture_sessions_quiz_quiz_id = q.lecture_sessions_quiz_id AND uq.user_lecture_sessions_quiz_user_id = ?", userID)
+	}
+
+	query = query.
+		Joins("JOIN lecture_sessions AS ls ON ls.lecture_session_id = q.lecture_sessions_quiz_lecture_session_id")
 
 	if lectureID != "" {
 		query = query.Where("ls.lecture_session_lecture_id = ?", lectureID)
@@ -173,30 +186,29 @@ func (ctrl *UserLectureSessionsQuizController) GetUserQuizWithDetail(c *fiber.Ct
 		query = query.Where("q.lecture_sessions_quiz_lecture_session_id = ?", lectureSessionID)
 	}
 
-	// ========== 5. Eksekusi Query ==========
+	// ========== 6. Eksekusi Query ==========
 	if err := query.Scan(&results).Error; err != nil {
 		log.Printf("[ERROR] Gagal ambil data kuis: %v\n", err)
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	// ========== 6. Debug Output ==========
+	// ========== 7. Debug Output ==========
 	for i, r := range results {
-		log.Printf("[DEBUG] #%d | QuizID: %s | Title: %s | Grade: %v | UserQuizID: %v | UserID: %v\n",
+		log.Printf("[DEBUG] #%d | QuizID: %s | Title: %s | Grade: %v | UserQuizID: %v\n",
 			i+1,
 			r.LectureSessionsQuizID,
 			r.LectureSessionsQuizTitle,
 			r.UserLectureSessionsQuizGrade,
 			r.UserLectureSessionsQuizID,
-			r.UserLectureSessionsQuizUserID,
 		)
 	}
 
-	// ========== 7. Return ==========
+	// ========== 8. Return ==========
 	duration := time.Since(start)
 	log.Printf("[SUCCESS] Berhasil ambil %d kuis dalam %s\n", len(results), duration)
 
 	return c.JSON(fiber.Map{
-		"message": "Berhasil ambil kuis dan hasil user",
+		"message": "Berhasil ambil kuis",
 		"data":    results,
 	})
 }
