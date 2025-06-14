@@ -123,6 +123,8 @@ func (ctrl *UserLectureSessionController) GetLectureSessionsWithUserProgress(c *
 		return fiber.NewError(fiber.StatusBadRequest, "Parameter masjid_id wajib diisi")
 	}
 
+	lectureID := c.Query("lecture_id") // ✅ Ambil parameter lecture_id
+
 	type Result struct {
 		LectureSessionID                     string     `json:"lecture_session_id"`
 		LectureSessionTitle                  string     `json:"lecture_session_title"`
@@ -133,7 +135,7 @@ func (ctrl *UserLectureSessionController) GetLectureSessionsWithUserProgress(c *
 		LectureSessionEndTime                time.Time  `json:"lecture_session_end_time"`
 		LectureSessionPlace                  string     `json:"lecture_session_place"`
 		LectureSessionLectureID              string     `json:"lecture_session_lecture_id"`
-		LectureSessionMasjidID               string     `json:"lecture_session_masjid_id"` // dari tabel lectures
+		LectureSessionMasjidID               string     `json:"lecture_session_masjid_id"`
 		LectureSessionCapacity               int        `json:"lecture_session_capacity"`
 		LectureSessionIsPublic               bool       `json:"lecture_session_is_public"`
 		LectureSessionIsRegistrationRequired bool       `json:"lecture_session_is_registration_required"`
@@ -184,6 +186,12 @@ func (ctrl *UserLectureSessionController) GetLectureSessionsWithUserProgress(c *
 		Where("l.lecture_masjid_id = ?", masjidID).
 		Order("ls.lecture_session_start_time ASC")
 
+	// ✅ Tambahkan filter lecture_id jika ada
+	if lectureID != "" {
+		query = query.Where("ls.lecture_session_lecture_id = ?", lectureID)
+	}
+
+	// ✅ Join user progress jika login
 	if userID != "" {
 		query = query.Joins(`
 			LEFT JOIN user_lecture_sessions uls 
@@ -191,7 +199,7 @@ func (ctrl *UserLectureSessionController) GetLectureSessionsWithUserProgress(c *
 			AND uls.user_lecture_session_user_id = ?
 		`, userID)
 	} else {
-		query = query.Joins("LEFT JOIN user_lecture_sessions uls ON false") // agar tetap bisa SELECT kolom uls.*
+		query = query.Joins("LEFT JOIN user_lecture_sessions uls ON false")
 	}
 
 	if err := query.Scan(&results).Error; err != nil {
