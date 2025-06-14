@@ -6,6 +6,8 @@ import (
 
 	"masjidku_backend/internals/features/masjids/user_follow_masjids/model"
 
+	masjidModel "masjidku_backend/internals/features/masjids/masjids/model"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -155,6 +157,7 @@ func (ctrl *UserFollowMasjidController) IsFollowing(ctx *fiber.Ctx) error {
 }
 
 // 📄 Lihat semua masjid yang diikuti oleh user (dari JWT token)
+// 📄 Lihat semua masjid yang diikuti oleh user (versi lengkap)
 func (ctrl *UserFollowMasjidController) GetFollowedMasjidsByUser(c *fiber.Ctx) error {
 	userIDStr := c.Locals("user_id")
 	if userIDStr == nil {
@@ -166,13 +169,27 @@ func (ctrl *UserFollowMasjidController) GetFollowedMasjidsByUser(c *fiber.Ctx) e
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "User ID tidak valid"})
 	}
 
-	var follows []model.UserFollowMasjidModel
-	if err := ctrl.DB.Where("follow_user_id = ?", userUUID).Find(&follows).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Gagal ambil daftar masjid yg di-follow"})
+	type Result struct {
+		masjidModel.MasjidModel
+		FollowCreatedAt time.Time `json:"follow_created_at"`
+	}
+
+	var results []Result
+
+	if err := ctrl.DB.
+		Table("user_follow_masjid AS ufm").
+		Select(`
+			m.*, 
+			ufm.follow_created_at
+		`).
+		Joins("JOIN masjids m ON m.masjid_id = ufm.follow_masjid_id").
+		Where("ufm.follow_user_id = ?", userUUID).
+		Scan(&results).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Gagal mengambil daftar masjid yg diikuti"})
 	}
 
 	return c.JSON(fiber.Map{
 		"message": "Daftar masjid yang diikuti berhasil diambil",
-		"data":    follows,
+		"data":    results,
 	})
 }

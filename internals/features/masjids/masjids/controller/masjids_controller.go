@@ -21,7 +21,6 @@ func NewMasjidController(db *gorm.DB) *MasjidController {
 }
 
 // 🟢 GET ALL MASJIDS
-// 🟢 GET ALL MASJIDS
 func (mc *MasjidController) GetAllMasjids(c *fiber.Ctx) error {
 	log.Println("[INFO] Fetching all masjids")
 
@@ -43,6 +42,33 @@ func (mc *MasjidController) GetAllMasjids(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"message": "Data semua masjid berhasil diambil",
+		"total":   len(masjidDTOs),
+		"data":    masjidDTOs,
+	})
+}
+
+// 🟢 GET VERIFIED MASJIDS
+func (mc *MasjidController) GetAllVerifiedMasjids(c *fiber.Ctx) error {
+	log.Println("[INFO] Fetching all verified masjids")
+
+	var masjids []model.MasjidModel
+	if err := mc.DB.Where("masjid_is_verified = ?", true).Find(&masjids).Error; err != nil {
+		log.Printf("[ERROR] Failed to fetch verified masjids: %v\n", err)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Gagal mengambil data masjid terverifikasi",
+		})
+	}
+
+	log.Printf("[SUCCESS] Retrieved %d verified masjids\n", len(masjids))
+
+	// 🔁 Transform ke DTO
+	var masjidDTOs []dto.MasjidResponse
+	for _, m := range masjids {
+		masjidDTOs = append(masjidDTOs, dto.FromModelMasjid(&m))
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Data masjid terverifikasi berhasil diambil",
 		"total":   len(masjidDTOs),
 		"data":    masjidDTOs,
 	})
