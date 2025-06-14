@@ -5,14 +5,13 @@ import (
 )
 
 type LectureSessionsQuestionModel struct {
-	LectureSessionsQuestionID              string     `gorm:"column:lecture_sessions_question_id;primaryKey;type:uuid;default:gen_random_uuid()"`
-	LectureSessionsQuestion                string     `gorm:"column:lecture_sessions_question;type:text;not null"`
-	LectureSessionsQuestionAnswer          string     `gorm:"column:lecture_sessions_question_answer;type:text;not null"`
-	LectureSessionsQuestionCorrect         string     `gorm:"column:lecture_sessions_question_correct;type:char(1);not null"` // A/B/C/D
-	LectureSessionsQuestionExplanation     string     `gorm:"column:lecture_sessions_question_explanation;type:text"`
-	LectureSessionsQuestionLectureSessionID *string    `gorm:"column:lecture_sessions_question_lecture_session_id;type:uuid"` // nullable
-	LectureSessionsQuestionExamID           *string    `gorm:"column:lecture_sessions_question_exam_id;type:uuid"`             // nullable
-	LectureSessionsQuestionCreatedAt        time.Time  `gorm:"column:lecture_sessions_question_created_at;autoCreateTime"`
+	LectureSessionsQuestionID               string    `gorm:"column:lecture_sessions_question_id;primaryKey;type:uuid;default:gen_random_uuid()" json:"lecture_sessions_question_id"`
+	LectureSessionsQuestion                 string    `gorm:"column:lecture_sessions_question;type:text;not null" json:"lecture_sessions_question"`
+	LectureSessionsQuestionAnswer           string    `gorm:"column:lecture_sessions_question_answer;type:text;not null" json:"lecture_sessions_question_answer"`
+	LectureSessionsQuestionCorrect          string    `gorm:"column:lecture_sessions_question_correct;type:char(1);not null" json:"lecture_sessions_question_correct"` // A/B/C/D
+	LectureSessionsQuestionExplanation      string    `gorm:"column:lecture_sessions_question_explanation;type:text" json:"lecture_sessions_question_explanation"`
+	LectureSessionsQuestionLectureSessionID *string   `gorm:"column:lecture_sessions_question_lecture_session_id;type:uuid" json:"lecture_sessions_question_lecture_session_id"` // nullable
+	LectureSessionsQuestionCreatedAt        time.Time `gorm:"column:lecture_sessions_question_created_at;autoCreateTime" json:"lecture_sessions_question_created_at"`
 }
 
 func (LectureSessionsQuestionModel) TableName() string {

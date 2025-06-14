@@ -37,7 +37,6 @@ func (ctrl *LectureSessionsQuestionController) CreateLectureSessionsQuestion(c *
 		LectureSessionsQuestionCorrect:          body.LectureSessionsQuestionCorrect,
 		LectureSessionsQuestionExplanation:      body.LectureSessionsQuestionExplanation,
 		LectureSessionsQuestionLectureSessionID: body.LectureSessionsQuestionLectureSessionID,
-		LectureSessionsQuestionExamID:           body.LectureSessionsQuestionExamID,
 	}
 
 	if err := ctrl.DB.Create(&question).Error; err != nil {
