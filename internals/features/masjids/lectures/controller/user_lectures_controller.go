@@ -207,7 +207,7 @@ func (ctrl *UserLectureController) GetUserLectureStats(c *fiber.Ctx) error {
 }
 
 
-func (ctrl *UserLectureController) GetUserLecturesWithSessionsProgress(c *fiber.Ctx) error {
+func (ctrl *UserLectureController) GetUserLecturesSessionsInLectureWithProgress(c *fiber.Ctx) error {
 	userID := ""
 	if raw := c.Locals("user_id"); raw != nil {
 		userID = raw.(string)
@@ -220,7 +220,6 @@ func (ctrl *UserLectureController) GetUserLecturesWithSessionsProgress(c *fiber.
 		return fiber.NewError(fiber.StatusBadRequest, "Parameter masjid_id atau lecture_id wajib diisi salah satu")
 	}
 
-	// Struct internal
 	type Teacher struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
@@ -271,27 +270,24 @@ func (ctrl *UserLectureController) GetUserLecturesWithSessionsProgress(c *fiber.
 	}
 
 	lectureQuery := ctrl.DB.Table("lectures AS l").
-		Select([]string{"l.*", "l.total_lecture_sessions"})
+		Select("l.*, l.total_lecture_sessions")
 
 	if userID != "" {
-		lectureQuery = lectureQuery.Select(append(lectureQuery.Statement.Selects,
-			"ul.user_lecture_grade_result",
-			"ul.user_lecture_created_at",
-			"ul.user_lecture_total_completed_sessions AS complete_total_lecture_sessions",
-		)).Joins(`
-			LEFT JOIN user_lectures ul 
-			ON ul.user_lecture_lecture_id = l.lecture_id 
-			AND ul.user_lecture_user_id = ?
-		`, userID)
+		lectureQuery = lectureQuery.
+			Select(append(lectureQuery.Statement.Selects,
+				"ul.user_lecture_grade_result",
+				"ul.user_lecture_created_at",
+				"ul.user_lecture_total_completed_sessions AS complete_total_lecture_sessions")).
+			Joins("LEFT JOIN user_lectures ul ON ul.user_lecture_lecture_id = l.lecture_id AND ul.user_lecture_user_id = ?", userID)
 	} else {
-		lectureQuery = lectureQuery.Select(append(lectureQuery.Statement.Selects,
-			"NULL AS user_lecture_grade_result",
-			"NULL AS user_lecture_created_at",
-			"NULL AS complete_total_lecture_sessions",
-		)).Joins("LEFT JOIN user_lectures ul ON false")
+		lectureQuery = lectureQuery.
+			Select(append(lectureQuery.Statement.Selects,
+				"NULL AS user_lecture_grade_result",
+				"NULL AS user_lecture_created_at",
+				"NULL AS complete_total_lecture_sessions")).
+			Joins("LEFT JOIN user_lectures ul ON false")
 	}
 
-	// Apply filter masjid_id dan/atau lecture_id
 	if masjidID != "" {
 		lectureQuery = lectureQuery.Where("l.lecture_masjid_id = ?", masjidID)
 	}
@@ -316,7 +312,7 @@ func (ctrl *UserLectureController) GetUserLecturesWithSessionsProgress(c *fiber.
 			"ls.lecture_session_end_time",
 			"ls.lecture_session_place",
 			"ls.lecture_session_lecture_id",
-			"ls.lecture_session_masjid_id",
+			"l.lecture_masjid_id AS lecture_session_masjid_id",
 			"ls.lecture_session_capacity",
 			"ls.lecture_session_is_public",
 			"ls.lecture_session_is_registration_required",
@@ -331,20 +327,18 @@ func (ctrl *UserLectureController) GetUserLecturesWithSessionsProgress(c *fiber.
 			"uls.user_lecture_session_paid_amount",
 			"uls.user_lecture_session_payment_time",
 			"uls.user_lecture_session_created_at",
-		})
+		}).
+		Joins("LEFT JOIN lectures l ON l.lecture_id = ls.lecture_session_lecture_id")
 
 	if userID != "" {
-		sessionQuery = sessionQuery.Joins(`
-			LEFT JOIN user_lecture_sessions uls 
-			ON uls.user_lecture_session_lecture_session_id = ls.lecture_session_id 
-			AND uls.user_lecture_session_user_id = ?
-		`, userID)
+		sessionQuery = sessionQuery.
+			Joins("LEFT JOIN user_lecture_sessions uls ON uls.user_lecture_session_lecture_session_id = ls.lecture_session_id AND uls.user_lecture_session_user_id = ?", userID)
 	} else {
 		sessionQuery = sessionQuery.Joins("LEFT JOIN user_lecture_sessions uls ON false")
 	}
 
 	if masjidID != "" {
-		sessionQuery = sessionQuery.Where("ls.lecture_session_masjid_id = ?", masjidID)
+		sessionQuery = sessionQuery.Where("l.lecture_masjid_id = ?", masjidID)
 	}
 	if lectureID != "" {
 		sessionQuery = sessionQuery.Where("ls.lecture_session_lecture_id = ?", lectureID)
@@ -360,7 +354,7 @@ func (ctrl *UserLectureController) GetUserLecturesWithSessionsProgress(c *fiber.
 		sessionMap[s.LectureSessionLectureID] = append(sessionMap[s.LectureSessionLectureID], s)
 	}
 
-	// Step 4: Merge
+	// Step 4: Merge lectures + sessions
 	var results []Result
 	for _, r := range lecturesRaw {
 		var teachers []Teacher

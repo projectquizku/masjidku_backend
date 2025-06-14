@@ -133,7 +133,7 @@ func (ctrl *UserLectureSessionController) GetLectureSessionsWithUserProgress(c *
 		LectureSessionEndTime                time.Time  `json:"lecture_session_end_time"`
 		LectureSessionPlace                  string     `json:"lecture_session_place"`
 		LectureSessionLectureID              string     `json:"lecture_session_lecture_id"`
-		LectureSessionMasjidID               string     `json:"lecture_session_masjid_id"`
+		LectureSessionMasjidID               string     `json:"lecture_session_masjid_id"` // dari tabel lectures
 		LectureSessionCapacity               int        `json:"lecture_session_capacity"`
 		LectureSessionIsPublic               bool       `json:"lecture_session_is_public"`
 		LectureSessionIsRegistrationRequired bool       `json:"lecture_session_is_registration_required"`
@@ -164,7 +164,7 @@ func (ctrl *UserLectureSessionController) GetLectureSessionsWithUserProgress(c *
 			"ls.lecture_session_end_time",
 			"ls.lecture_session_place",
 			"ls.lecture_session_lecture_id",
-			"ls.lecture_session_masjid_id",
+			"l.lecture_masjid_id AS lecture_session_masjid_id",
 			"ls.lecture_session_capacity",
 			"ls.lecture_session_is_public",
 			"ls.lecture_session_is_registration_required",
@@ -180,7 +180,8 @@ func (ctrl *UserLectureSessionController) GetLectureSessionsWithUserProgress(c *
 			"uls.user_lecture_session_payment_time",
 			"uls.user_lecture_session_created_at",
 		}).
-		Where("ls.lecture_session_masjid_id = ?", masjidID).
+		Joins("LEFT JOIN lectures l ON l.lecture_id = ls.lecture_session_lecture_id").
+		Where("l.lecture_masjid_id = ?", masjidID).
 		Order("ls.lecture_session_start_time ASC")
 
 	if userID != "" {
@@ -190,7 +191,7 @@ func (ctrl *UserLectureSessionController) GetLectureSessionsWithUserProgress(c *
 			AND uls.user_lecture_session_user_id = ?
 		`, userID)
 	} else {
-		query = query.Joins("LEFT JOIN user_lecture_sessions uls ON false")
+		query = query.Joins("LEFT JOIN user_lecture_sessions uls ON false") // agar tetap bisa SELECT kolom uls.*
 	}
 
 	if err := query.Scan(&results).Error; err != nil {

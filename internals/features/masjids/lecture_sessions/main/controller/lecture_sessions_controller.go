@@ -176,20 +176,15 @@ func (ctrl *LectureSessionController) GetByLectureID(c *fiber.Ctx) error {
 // ================================
 // UPDATE
 // ================================
-// ================================
-// UPDATE
-// ================================
 func (ctrl *LectureSessionController) UpdateLectureSession(c *fiber.Ctx) error {
 	idParam := c.Params("id")
-
-	// Validasi UUID
 	sessionID, err := uuid.Parse(idParam)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "ID tidak valid")
 	}
 
-	var session model.LectureSessionModel
-	if err := ctrl.DB.First(&session, "lecture_session_id = ?", sessionID).Error; err != nil {
+	var existing model.LectureSessionModel
+	if err := ctrl.DB.First(&existing, "lecture_session_id = ?", sessionID).Error; err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Sesi kajian tidak ditemukan")
 	}
 
@@ -198,49 +193,47 @@ func (ctrl *LectureSessionController) UpdateLectureSession(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Permintaan tidak valid")
 	}
 
-	// Validasi waktu
 	if body.LectureSessionEndTime.Before(body.LectureSessionStartTime) {
 		return fiber.NewError(fiber.StatusBadRequest, "Waktu selesai tidak boleh sebelum waktu mulai")
 	}
 
-	// Update semua field
-	session.LectureSessionTitle = body.LectureSessionTitle
-	session.LectureSessionDescription = body.LectureSessionDescription
-	session.LectureSessionStartTime = body.LectureSessionStartTime
-	session.LectureSessionEndTime = body.LectureSessionEndTime
-	session.LectureSessionPlace = body.LectureSessionPlace
-	session.LectureSessionLectureID = body.LectureSessionLectureID
-	session.LectureSessionMasjidID = body.LectureSessionMasjidID
-	session.LectureSessionCapacity = body.LectureSessionCapacity
-	session.LectureSessionIsPublic = body.LectureSessionIsPublic
-	session.LectureSessionIsRegistrationRequired = body.LectureSessionIsRegistrationRequired
-	session.LectureSessionIsPaid = body.LectureSessionIsPaid
-	session.LectureSessionPrice = body.LectureSessionPrice
-	session.LectureSessionPaymentDeadline = body.LectureSessionPaymentDeadline
+	existing.LectureSessionTitle = body.LectureSessionTitle
+	existing.LectureSessionDescription = body.LectureSessionDescription
+	existing.LectureSessionTeacher = body.LectureSessionTeacher.ToModel()
+	existing.LectureSessionImageURL = body.LectureSessionImageURL
+	existing.LectureSessionStartTime = body.LectureSessionStartTime
+	existing.LectureSessionEndTime = body.LectureSessionEndTime
+	existing.LectureSessionPlace = body.LectureSessionPlace
+	existing.LectureSessionLectureID = body.LectureSessionLectureID
+	existing.LectureSessionCapacity = body.LectureSessionCapacity
+	existing.LectureSessionIsPublic = body.LectureSessionIsPublic
+	existing.LectureSessionIsRegistrationRequired = body.LectureSessionIsRegistrationRequired
+	existing.LectureSessionIsPaid = body.LectureSessionIsPaid
+	existing.LectureSessionPrice = body.LectureSessionPrice
+	existing.LectureSessionPaymentDeadline = body.LectureSessionPaymentDeadline
 
-	// Update tambahan: teacher JSON dan image URL
-	session.LectureSessionTeacher = body.LectureSessionTeacher.ToModel()
-	session.LectureSessionImageURL = body.LectureSessionImageURL
-
-	// Simpan perubahan
-	if err := ctrl.DB.Save(&session).Error; err != nil {
+	if err := ctrl.DB.Save(&existing).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Gagal memperbarui sesi kajian")
 	}
 
-	return c.JSON(dto.ToLectureSessionDTO(session))
+	return c.JSON(dto.ToLectureSessionDTO(existing))
 }
 
 // ================================
 // DELETE
 // ================================
 func (ctrl *LectureSessionController) DeleteLectureSession(c *fiber.Ctx) error {
-	id := c.Params("id")
+	idParam := c.Params("id")
+	sessionID, err := uuid.Parse(idParam)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "ID tidak valid")
+	}
 
-	if err := ctrl.DB.Delete(&model.LectureSessionModel{}, "lecture_session_id = ?", id).Error; err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to delete lecture session")
+	if err := ctrl.DB.Delete(&model.LectureSessionModel{}, "lecture_session_id = ?", sessionID).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Gagal menghapus sesi kajian")
 	}
 
 	return c.JSON(fiber.Map{
-		"message": "Lecture session deleted successfully",
+		"message": "Sesi kajian berhasil dihapus",
 	})
 }

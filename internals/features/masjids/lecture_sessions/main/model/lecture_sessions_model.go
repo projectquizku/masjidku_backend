@@ -42,7 +42,6 @@ type LectureSessionModel struct {
 	LectureSessionPlace                  *string      `gorm:"column:lecture_session_place;type:text" json:"lecture_session_place"`
 	LectureSessionImageURL               *string      `gorm:"column:lecture_session_image_url;type:text" json:"lecture_session_image_url"`
 	LectureSessionLectureID              *uuid.UUID   `gorm:"column:lecture_session_lecture_id;type:uuid" json:"lecture_session_lecture_id"`
-	LectureSessionMasjidID               uuid.UUID    `gorm:"column:lecture_session_masjid_id;type:uuid;not null" json:"lecture_session_masjid_id"`
 	LectureSessionCapacity               *int         `gorm:"column:lecture_session_capacity" json:"lecture_session_capacity"`
 	LectureSessionIsPublic               bool         `gorm:"column:lecture_session_is_public;default:true" json:"lecture_session_is_public"`
 	LectureSessionIsRegistrationRequired bool         `gorm:"column:lecture_session_is_registration_required;default:false" json:"lecture_session_is_registration_required"`

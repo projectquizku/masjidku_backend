@@ -22,7 +22,7 @@ func AllLectureRoutes(api fiber.Router, db *gorm.DB) {
 	userLecture.Get("/with-progress", ctrl.GetUserLectureStats)
 
 	// 🧑‍🏫 Route untuk user_lecture_sessions
-	userLectureSessions := api.Group("/user-lecture-sessions")
-	userLectureSessions.Get("/with-progress", ctrl.GetUserLecturesWithSessionsProgress)
+	userLectureSessions := api.Group("/user-lecture-sessions-in-lecture")
+	userLectureSessions.Get("/with-progress", ctrl.GetUserLecturesSessionsInLectureWithProgress)
 
 }

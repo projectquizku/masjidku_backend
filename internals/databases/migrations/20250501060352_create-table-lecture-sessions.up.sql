@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS lecture_sessions (
     lecture_session_place TEXT,
     lecture_session_image_url TEXT, -- Gambar opsional per sesi
     lecture_session_lecture_id UUID REFERENCES lectures(lecture_id) ON DELETE CASCADE,
-    lecture_session_masjid_id UUID NOT NULL REFERENCES masjids(masjid_id) ON DELETE CASCADE,
     lecture_session_capacity INT,
     lecture_session_is_public BOOLEAN DEFAULT TRUE,
     lecture_session_is_registration_required BOOLEAN DEFAULT FALSE,
@@ -20,7 +19,6 @@ CREATE TABLE IF NOT EXISTS lecture_sessions (
 
 -- Indexing
 CREATE INDEX idx_lecture_sessions_lecture ON lecture_sessions(lecture_session_lecture_id);
-CREATE INDEX idx_lecture_sessions_masjid ON lecture_sessions(lecture_session_masjid_id);
 CREATE INDEX idx_lecture_sessions_start_time ON lecture_sessions(lecture_session_start_time);
 CREATE INDEX idx_lecture_sessions_end_time ON lecture_sessions(lecture_session_end_time);
 
