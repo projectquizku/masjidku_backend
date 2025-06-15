@@ -11,7 +11,12 @@ func AllArticleRoutes(api fiber.Router, db *gorm.DB) {
 	articleCtrl := controller.NewArticleController(db)
 
 	// === USER ROUTES ===
-	user := api.Group("/articles")
-	user.Get("/", articleCtrl.GetAllArticles)     // 📄 Lihat semua artikel
-	user.Get("/:id", articleCtrl.GetArticleByID)  // 🔍 Lihat detail artikel
+	article := api.Group("/articles")
+	article.Get("/", articleCtrl.GetAllArticles)    // 📄 Lihat semua artikel
+	article.Get("/:id", articleCtrl.GetArticleByID) // 🔍 Lihat detail artikel
+
+	carouselCtrl := controller.NewCarouselController(db)
+	// === USER ROUTES ===
+	carousel := api.Group("/carousels")
+	carousel.Get("/", carouselCtrl.GetAllActiveCarousels) // 🎡 Ambil semua carousel aktif
 }

@@ -30,6 +30,25 @@ CREATE INDEX idx_articles_created_at ON articles(article_created_at);
 CREATE INDEX idx_articles_updated_at ON articles(article_updated_at);
 
 
+CREATE TABLE carousels (
+  carousel_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  carousel_title VARCHAR(255),
+  carousel_caption TEXT,
+  carousel_image_url TEXT NOT NULL,
+  carousel_target_url TEXT, -- optional: bisa link ke /artikel/:id atau /event/:id
+  carousel_type VARCHAR(50), -- 'artikel', 'event', 'pengumuman', dsb
+  carousel_article_id UUID, -- jika carousel ini terkait artikel
+  carousel_order INT,
+  carousel_is_active BOOLEAN DEFAULT TRUE,
+  carousel_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  carousel_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_carousel_article FOREIGN KEY (carousel_article_id) REFERENCES articles(article_id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_carousel_order ON carousels(carousel_order);
+CREATE INDEX idx_carousel_active ON carousels(carousel_is_active);
+
 
 CREATE TABLE quotes (
   quote_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
