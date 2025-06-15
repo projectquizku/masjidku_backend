@@ -10,4 +10,4 @@ CREATE TABLE IF NOT EXISTS masjid_stats (
 );
 
 -- Index untuk pencarian berdasarkan masjid_id
-CREATE INDEX idx_masjid_stats_masjid_id ON masjid_stats(masjid_stats_masjid_id);
+CREATE INDEX IF NOT EXISTS idx_masjid_stats_masjid_id ON masjid_stats(masjid_stats_masjid_id);

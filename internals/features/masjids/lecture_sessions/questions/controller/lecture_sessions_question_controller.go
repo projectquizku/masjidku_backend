@@ -22,6 +22,9 @@ func NewLectureSessionsQuestionController(db *gorm.DB) *LectureSessionsQuestionC
 // =============================
 // ➕ Create Question
 // =============================
+// =============================
+// ➕ Create Question
+// =============================
 func (ctrl *LectureSessionsQuestionController) CreateLectureSessionsQuestion(c *fiber.Ctx) error {
 	var body dto.CreateLectureSessionsQuestionRequest
 	if err := c.BodyParser(&body); err != nil {
@@ -32,11 +35,12 @@ func (ctrl *LectureSessionsQuestionController) CreateLectureSessionsQuestion(c *
 	}
 
 	question := model.LectureSessionsQuestionModel{
-		LectureSessionsQuestion:                 body.LectureSessionsQuestion,
-		LectureSessionsQuestionAnswer:           body.LectureSessionsQuestionAnswer,
-		LectureSessionsQuestionCorrect:          body.LectureSessionsQuestionCorrect,
-		LectureSessionsQuestionExplanation:      body.LectureSessionsQuestionExplanation,
-		LectureSessionsQuestionLectureSessionID: body.LectureSessionsQuestionLectureSessionID,
+		LectureSessionsQuestion:            body.LectureSessionsQuestion,
+		LectureSessionsQuestionAnswer:      body.LectureSessionsQuestionAnswer,
+		LectureSessionsQuestionCorrect:     body.LectureSessionsQuestionCorrect,
+		LectureSessionsQuestionExplanation: body.LectureSessionsQuestionExplanation,
+		LectureSessionsQuestionQuizID:      body.LectureSessionsQuestionQuizID,
+		LectureSessionsQuestionExamID:      body.LectureSessionsQuestionExamID,
 	}
 
 	if err := ctrl.DB.Create(&question).Error; err != nil {

@@ -8,13 +8,7 @@ import (
 )
 
 func LectureSessionsQuestionUserRoutes(user fiber.Router, db *gorm.DB) {
-	questionCtrl := controller.NewLectureSessionsQuestionController(db)
 	userQuestionCtrl := controller.NewLectureSessionsUserQuestionController(db)
-
-	// 📝 Group: /lecture-sessions-questions (read-only)
-	questions := user.Group("/lecture-sessions-questions")
-	questions.Get("/", questionCtrl.GetAllLectureSessionsQuestions)
-	// questions.Get("/:id", questionCtrl.GetLectureSessionsQuestionByID) // (opsional)
 
 	// 👤 Group: /lecture-sessions-user-questions
 	userQuestions := user.Group("/lecture-sessions-user-questions")

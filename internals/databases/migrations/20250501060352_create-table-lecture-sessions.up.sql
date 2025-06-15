@@ -18,14 +18,14 @@ CREATE TABLE IF NOT EXISTS lecture_sessions (
 );
 
 -- Indexing
-CREATE INDEX idx_lecture_sessions_lecture ON lecture_sessions(lecture_session_lecture_id);
-CREATE INDEX idx_lecture_sessions_start_time ON lecture_sessions(lecture_session_start_time);
-CREATE INDEX idx_lecture_sessions_end_time ON lecture_sessions(lecture_session_end_time);
+CREATE INDEX IF NOT EXISTS idx_lecture_sessions_lecture ON lecture_sessions(lecture_session_lecture_id);
+CREATE INDEX IF NOT EXISTS idx_lecture_sessions_start_time ON lecture_sessions(lecture_session_start_time);
+CREATE INDEX IF NOT EXISTS idx_lecture_sessions_end_time ON lecture_sessions(lecture_session_end_time);
 
 -- Index untuk pencarian berdasarkan ID teacher dalam JSON
-CREATE INDEX idx_lecture_sessions_teacher_id 
+CREATE INDEX IF NOT EXISTS idx_lecture_sessions_teacher_id 
 ON lecture_sessions ((lecture_session_teacher->>'id'));
-CREATE INDEX idx_lecture_sessions_teacher_name 
+CREATE INDEX IF NOT EXISTS idx_lecture_sessions_teacher_name 
 ON lecture_sessions ((lecture_session_teacher->>'name'));
 
 
@@ -52,11 +52,11 @@ CREATE TABLE user_lecture_sessions (
 );
 
 -- Indexing
-CREATE INDEX idx_user_lecture_sessions_user 
+CREATE INDEX IF NOT EXISTS idx_user_lecture_sessions_user 
   ON user_lecture_sessions(user_lecture_session_user_id);
 
-CREATE INDEX idx_user_lecture_sessions_lecture_session 
+CREATE INDEX IF NOT EXISTS idx_user_lecture_sessions_lecture_session 
   ON user_lecture_sessions(user_lecture_session_lecture_session_id);
 
-CREATE INDEX idx_user_lecture_sessions_attendance_status 
+CREATE INDEX IF NOT EXISTS idx_user_lecture_sessions_attendance_status 
   ON user_lecture_sessions(user_lecture_session_attendance_status);

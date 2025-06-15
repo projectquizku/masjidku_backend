@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS notifications (
     notification_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_notification_type ON notifications(notification_type);
-CREATE INDEX idx_notification_masjid_id ON notifications(notification_masjid_id);
+CREATE INDEX IF NOT EXISTS idx_notification_type ON notifications(notification_type);
+CREATE INDEX IF NOT EXISTS idx_notification_masjid_id ON notifications(notification_masjid_id);
 
 
 CREATE TABLE IF NOT EXISTS notification_users (
@@ -28,6 +28,6 @@ CREATE TABLE IF NOT EXISTS notification_users (
 );
 
 -- 🔍 Indexes for faster querying
-CREATE INDEX idx_notification_users_user_id ON notification_users(notification_users_user_id);
-CREATE INDEX idx_notification_users_notification_id ON notification_users(notification_users_notification_id);
-CREATE INDEX idx_notification_users_read ON notification_users(notification_users_read);
+CREATE INDEX IF NOT EXISTS idx_notification_users_user_id ON notification_users(notification_users_user_id);
+CREATE INDEX IF NOT EXISTS idx_notification_users_notification_id ON notification_users(notification_users_notification_id);
+CREATE INDEX IF NOT EXISTS idx_notification_users_read ON notification_users(notification_users_read);

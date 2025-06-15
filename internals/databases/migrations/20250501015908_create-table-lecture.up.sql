@@ -12,13 +12,13 @@ CREATE TABLE IF NOT EXISTS lectures (
 );
 
 -- Untuk pencarian berdasarkan masjid
-CREATE INDEX idx_lecture_masjid_id ON lectures(lecture_masjid_id);
+CREATE INDEX IF NOT EXISTS idx_lecture_masjid_id ON lectures(lecture_masjid_id);
 
 -- Untuk sorting berdasarkan waktu pembuatan
-CREATE INDEX idx_lecture_created_at ON lectures(lecture_created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_lecture_created_at ON lectures(lecture_created_at DESC);
 
 -- Kombinasi pencarian per masjid urut waktu (opsional tapi disarankan)
-CREATE INDEX idx_lecture_masjid_created_at ON lectures(lecture_masjid_id, lecture_created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_lecture_masjid_created_at ON lectures(lecture_masjid_id, lecture_created_at DESC);
 
 
 -- Tabel user_lectures: relasi user mengikuti kajian
@@ -33,5 +33,5 @@ CREATE TABLE IF NOT EXISTS user_lectures (
 );
 
 -- Index untuk pencarian cepat
-CREATE INDEX idx_user_lecture_lecture_id ON user_lectures(user_lecture_lecture_id);
-CREATE INDEX idx_user_lecture_user_id ON user_lectures(user_lecture_user_id);
+CREATE INDEX IF NOT EXISTS idx_user_lecture_lecture_id ON user_lectures(user_lecture_lecture_id);
+CREATE INDEX IF NOT EXISTS idx_user_lecture_user_id ON user_lectures(user_lecture_user_id);

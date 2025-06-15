@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS events (
 );
 
 -- Indexing
-CREATE INDEX idx_event_masjid_id ON events(event_masjid_id);
-CREATE INDEX idx_event_slug ON events(event_slug);
+CREATE INDEX IF NOT EXISTS idx_event_masjid_id ON events(event_masjid_id);
+CREATE INDEX IF NOT EXISTS idx_event_slug ON events(event_slug);
 
 
 CREATE TABLE IF NOT EXISTS event_sessions (
@@ -32,8 +32,8 @@ CREATE TABLE IF NOT EXISTS event_sessions (
 );
 
 -- Indexing
-CREATE INDEX idx_event_sessions_event_id ON event_sessions(event_session_event_id);
-CREATE INDEX idx_event_sessions_start_time ON event_sessions(event_session_start_time);
+CREATE INDEX IF NOT EXISTS idx_event_sessions_event_id ON event_sessions(event_session_event_id);
+CREATE INDEX IF NOT EXISTS idx_event_sessions_start_time ON event_sessions(event_session_start_time);
 
 
 
@@ -48,5 +48,5 @@ CREATE TABLE IF NOT EXISTS user_event_registrations (
 );
 
 -- Indexing
-CREATE INDEX idx_user_event_registrations_event_session_id ON user_event_registrations(user_event_registration_event_session_id);
-CREATE INDEX idx_user_event_registrations_user_id ON user_event_registrations(user_event_registration_user_id);
+CREATE INDEX IF NOT EXISTS idx_user_event_registrations_event_session_id ON user_event_registrations(user_event_registration_event_session_id);
+CREATE INDEX IF NOT EXISTS idx_user_event_registrations_user_id ON user_event_registrations(user_event_registration_user_id);

@@ -10,7 +10,6 @@ import (
 func LectureSessionsQuestionAdminRoutes(admin fiber.Router, db *gorm.DB) {
 	questionCtrl := linkcontroller.NewLectureSessionsQuestionController(db)
 	userQuestionCtrl := linkcontroller.NewLectureSessionsUserQuestionController(db)
-	linkCtrl := linkcontroller.NewLectureSessionsQuestionLinkController(db)
 
 	// 📝 Group: /lecture-sessions-questions
 	questions := admin.Group("/lecture-sessions-questions")
@@ -23,7 +22,4 @@ func LectureSessionsQuestionAdminRoutes(admin fiber.Router, db *gorm.DB) {
 	userQuestions := admin.Group("/lecture-sessions-user-questions")
 	userQuestions.Delete("/:id", userQuestionCtrl.DeleteByID) // ❌ Hapus jawaban user
 
-	// 🔗 Group: /lecture-sessions-question-links
-	links := admin.Group("/lecture-sessions-question-links")
-	links.Post("/", linkCtrl.CreateLink) // ➕ Hubungkan soal ke quiz atau exam
 }

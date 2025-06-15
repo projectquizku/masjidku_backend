@@ -1,4 +1,4 @@
-CREATE TABLE posts (
+CREATE TABLE IF NOT EXISTS posts (
   post_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   post_title VARCHAR(255) NOT NULL,
   post_content TEXT NOT NULL,
@@ -13,13 +13,13 @@ CREATE TABLE posts (
 );
 
 -- Indexing
-CREATE INDEX idx_posts_masjid_id ON posts(post_masjid_id);
-CREATE INDEX idx_posts_user_id ON posts(post_user_id);
-CREATE INDEX idx_posts_created_at ON posts(post_created_at);
-CREATE INDEX idx_posts_deleted_at ON posts(post_deleted_at);
+CREATE INDEX IF NOT EXISTS idx_posts_masjid_id ON posts(post_masjid_id);
+CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts(post_user_id);
+CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(post_created_at);
+CREATE INDEX IF NOT EXISTS idx_posts_deleted_at ON posts(post_deleted_at);
 
 
-CREATE TABLE post_likes (
+CREATE TABLE IF NOT EXISTS post_likes (
   post_like_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   post_like_is_liked BOOLEAN DEFAULT TRUE,
   post_like_post_id UUID NOT NULL REFERENCES posts(post_id) ON DELETE CASCADE,
@@ -30,6 +30,6 @@ CREATE TABLE post_likes (
 );
 
 -- Indexing
-CREATE INDEX idx_post_likes_post_id ON post_likes(post_like_post_id);
-CREATE INDEX idx_post_likes_user_id ON post_likes(post_like_user_id);
-CREATE INDEX idx_post_likes_updated_at ON post_likes(post_like_updated_at);
+CREATE INDEX IF NOT EXISTS idx_post_likes_post_id ON post_likes(post_like_post_id);
+CREATE INDEX IF NOT EXISTS idx_post_likes_user_id ON post_likes(post_like_user_id);
+CREATE INDEX IF NOT EXISTS idx_post_likes_updated_at ON post_likes(post_like_updated_at);

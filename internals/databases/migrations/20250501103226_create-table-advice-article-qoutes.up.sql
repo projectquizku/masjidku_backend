@@ -1,4 +1,4 @@
-CREATE TABLE advices (
+CREATE TABLE IF NOT EXISTS advices (
   advice_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   advice_description TEXT NOT NULL,
   advice_lecture_id UUID REFERENCES lectures(lecture_id) ON DELETE SET NULL,
@@ -7,12 +7,12 @@ CREATE TABLE advices (
 );
 
 -- Indexing (disarankan untuk filter dan relasi)
-CREATE INDEX idx_advices_user_id ON advices(advice_user_id);
-CREATE INDEX idx_advices_lecture_id ON advices(advice_lecture_id);
-CREATE INDEX idx_advices_created_at ON advices(advice_created_at);
+CREATE INDEX IF NOT EXISTS idx_advices_user_id ON advices(advice_user_id);
+CREATE INDEX IF NOT EXISTS idx_advices_lecture_id ON advices(advice_lecture_id);
+CREATE INDEX IF NOT EXISTS idx_advices_created_at ON advices(advice_created_at);
 
 
-CREATE TABLE articles (
+CREATE TABLE IF NOT EXISTS articles (
   article_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   article_title VARCHAR(255) NOT NULL,
   article_description TEXT NOT NULL,
@@ -23,14 +23,14 @@ CREATE TABLE articles (
 );
 
 -- Untuk urutan tampilan artikel
-CREATE INDEX idx_articles_order_id ON articles(article_order_id);
+CREATE INDEX IF NOT EXISTS idx_articles_order_id ON articles(article_order_id);
 
 -- Untuk pencarian artikel berdasarkan waktu
-CREATE INDEX idx_articles_created_at ON articles(article_created_at);
-CREATE INDEX idx_articles_updated_at ON articles(article_updated_at);
+CREATE INDEX IF NOT EXISTS idx_articles_created_at ON articles(article_created_at);
+CREATE INDEX IF NOT EXISTS idx_articles_updated_at ON articles(article_updated_at);
 
 
-CREATE TABLE carousels (
+CREATE TABLE IF NOT EXISTS carousels (
   carousel_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   carousel_title VARCHAR(255),
   carousel_caption TEXT,
@@ -46,11 +46,11 @@ CREATE TABLE carousels (
   CONSTRAINT fk_carousel_article FOREIGN KEY (carousel_article_id) REFERENCES articles(article_id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_carousel_order ON carousels(carousel_order);
-CREATE INDEX idx_carousel_active ON carousels(carousel_is_active);
+CREATE INDEX IF NOT EXISTS idx_carousel_order ON carousels(carousel_order);
+CREATE INDEX IF NOT EXISTS idx_carousel_active ON carousels(carousel_is_active);
 
 
-CREATE TABLE quotes (
+CREATE TABLE IF NOT EXISTS quotes (
   quote_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   quote_text TEXT NOT NULL,
   is_published BOOLEAN DEFAULT FALSE,
@@ -59,6 +59,6 @@ CREATE TABLE quotes (
 );
 
 -- Index untuk performa filtering dan penampilan
-CREATE INDEX idx_quotes_display_order ON quotes(display_order);
-CREATE INDEX idx_quotes_created_at ON quotes(created_at);
-CREATE INDEX idx_quotes_is_published ON quotes(is_published);
+CREATE INDEX IF NOT EXISTS idx_quotes_display_order ON quotes(display_order);
+CREATE INDEX IF NOT EXISTS idx_quotes_created_at ON quotes(created_at);
+CREATE INDEX IF NOT EXISTS idx_quotes_is_published ON quotes(is_published);

@@ -8,8 +8,8 @@ import (
 )
 
 func LectureSessionsQuizAdminRoutes(admin fiber.Router, db *gorm.DB) {
-	quizCtrl := quizcontroller.NewLectureSessionsQuizController(db)
 
+	quizCtrl := quizcontroller.NewLectureSessionsQuizController(db)
 	quizzes := admin.Group("/lecture-sessions-quiz")
 	quizzes.Post("/", quizCtrl.CreateQuiz)          // ➕ Tambah quiz
 	quizzes.Get("/", quizCtrl.GetAllQuizzes)        // 📄 Lihat semua quiz
@@ -17,8 +17,8 @@ func LectureSessionsQuizAdminRoutes(admin fiber.Router, db *gorm.DB) {
 	quizzes.Delete("/:id", quizCtrl.DeleteQuizByID) // ❌ Hapus quiz
 
 	userQuizCtrl := quizcontroller.NewUserLectureSessionsQuizController(db)
-
 	userQuiz := admin.Group("/user-lecture-sessions-quiz")
 	userQuiz.Post("/", userQuizCtrl.CreateUserLectureSessionsQuiz)           // ➕ Submit nilai quiz
 	userQuiz.Get("/filter", userQuizCtrl.GetUserLectureSessionsQuizFiltered) // 🔍 Lihat hasil quiz user tertentu
+
 }

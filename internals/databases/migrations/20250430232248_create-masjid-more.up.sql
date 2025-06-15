@@ -27,10 +27,10 @@ CREATE TABLE IF NOT EXISTS masjid_tag_relations  (
 
 
 -- Index untuk pencarian cepat profil DKM/pengajar berdasarkan masjid
-CREATE INDEX idx_profile_teacher_dkm_masjid_id
+CREATE INDEX IF NOT EXISTS idx_profile_teacher_dkm_masjid_id
 ON masjid_profile_teacher_dkm(masjid_profile_teacher_dkm_masjid_id);
 
 
 -- Untuk tag relations
-CREATE INDEX idx_tag_relations_masjid_id ON masjid_tag_relations(masjid_tag_relation_masjid_id);
-CREATE INDEX idx_tag_relations_tag_id ON masjid_tag_relations(masjid_tag_relation_tag_id);
+CREATE INDEX IF NOT EXISTS idx_tag_relations_masjid_id ON masjid_tag_relations(masjid_tag_relation_masjid_id);
+CREATE INDEX IF NOT EXISTS idx_tag_relations_tag_id ON masjid_tag_relations(masjid_tag_relation_tag_id);

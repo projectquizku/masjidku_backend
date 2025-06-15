@@ -29,6 +29,7 @@ func MasjidPublicRoutes(r fiber.Router, db *gorm.DB) {
 	EventRoutes.AllEventRoutes(r, db)
 	LectureSessionsAssetRoutes.AllLectureSessionsAssetRoutes(r, db)
 	LectureSessionsQuizRoutes.LectureSessionsQuizUserRoutes(r, db)
+	LectureSessionsQuestionRoutes.AllLectureSessionsQuestionRoutes(r, db)
 }
 
 func MasjidUserRoutes(r fiber.Router, db *gorm.DB) {

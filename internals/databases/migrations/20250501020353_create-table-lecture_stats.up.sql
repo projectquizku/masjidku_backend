@@ -8,4 +8,4 @@ CREATE TABLE IF NOT EXISTS lecture_stats (
 );
 
 -- Index
-CREATE INDEX idx_lecture_stats_lecture_id ON lecture_stats(lecture_stats_lecture_id);
+CREATE INDEX IF NOT EXISTS idx_lecture_stats_lecture_id ON lecture_stats(lecture_stats_lecture_id);
