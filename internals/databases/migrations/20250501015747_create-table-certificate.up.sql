@@ -11,14 +11,11 @@ CREATE TABLE IF NOT EXISTS user_certificates (
     updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS certificate_versions (
-    cert_versions_id SERIAL PRIMARY KEY,
-    cert_versions_subcategory_id INTEGER NOT NULL REFERENCES subcategories(subcategory_id) ON DELETE CASCADE,
-
-    cert_versions_number INTEGER NOT NULL,
-    cert_versions_total_themes INTEGER NOT NULL DEFAULT 0,
-    cert_versions_note TEXT,
-
-    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITHOUT TIME ZONE
+CREATE TABLE IF NOT EXISTS certificates (
+    certificate_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    certificate_title VARCHAR(255) NOT NULL,
+    certificate_description TEXT,
+    certificate_template_url TEXT, -- Link ke file template (PDF/JPG)
+    certificate_created_by UUID REFERENCES users(id) ON DELETE SET NULL, -- Admin/pengunggah
+    certificate_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

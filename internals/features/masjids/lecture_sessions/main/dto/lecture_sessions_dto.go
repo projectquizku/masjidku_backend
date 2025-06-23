@@ -14,6 +14,9 @@ import (
 // =========================
 // Response DTO
 // =========================
+// =========================
+// Response DTO
+// =========================
 
 type LectureSessionDTO struct {
 	LectureSessionID                     uuid.UUID    `json:"lecture_session_id"`
@@ -25,6 +28,7 @@ type LectureSessionDTO struct {
 	LectureSessionEndTime                time.Time    `json:"lecture_session_end_time"`
 	LectureSessionPlace                  *string      `json:"lecture_session_place,omitempty"`
 	LectureSessionLectureID              *uuid.UUID   `json:"lecture_session_lecture_id,omitempty"`
+	LectureSessionCertificateID          *uuid.UUID   `json:"lecture_session_certificate_id,omitempty"` // ✅ tambahan
 	LectureSessionCapacity               *int         `json:"lecture_session_capacity,omitempty"`
 	LectureSessionIsPublic               bool         `json:"lecture_session_is_public"`
 	LectureSessionIsRegistrationRequired bool         `json:"lecture_session_is_registration_required"`
@@ -47,6 +51,7 @@ type CreateLectureSessionRequest struct {
 	LectureSessionEndTime                time.Time    `json:"lecture_session_end_time" validate:"required"`
 	LectureSessionPlace                  *string      `json:"lecture_session_place,omitempty"`
 	LectureSessionLectureID              *uuid.UUID   `json:"lecture_session_lecture_id,omitempty"`
+	LectureSessionCertificateID          *uuid.UUID   `json:"lecture_session_certificate_id,omitempty"` // ✅ tambahan
 	LectureSessionCapacity               *int         `json:"lecture_session_capacity,omitempty"`
 	LectureSessionIsPublic               bool         `json:"lecture_session_is_public"`
 	LectureSessionIsRegistrationRequired bool         `json:"lecture_session_is_registration_required"`
@@ -65,12 +70,13 @@ func (r CreateLectureSessionRequest) ToModel() model.LectureSessionModel {
 	return model.LectureSessionModel{
 		LectureSessionTitle:                  r.LectureSessionTitle,
 		LectureSessionDescription:            r.LectureSessionDescription,
-		LectureSessionTeacher:                r.LectureSessionTeacher.ToModel(), // 👈 Panggil converter eksplisit
+		LectureSessionTeacher:                r.LectureSessionTeacher.ToModel(),
 		LectureSessionImageURL:               r.LectureSessionImageURL,
 		LectureSessionStartTime:              r.LectureSessionStartTime,
 		LectureSessionEndTime:                r.LectureSessionEndTime,
 		LectureSessionPlace:                  r.LectureSessionPlace,
 		LectureSessionLectureID:              r.LectureSessionLectureID,
+		LectureSessionCertificateID:          r.LectureSessionCertificateID, // ✅ tambahan
 		LectureSessionCapacity:               r.LectureSessionCapacity,
 		LectureSessionIsPublic:               r.LectureSessionIsPublic,
 		LectureSessionIsRegistrationRequired: r.LectureSessionIsRegistrationRequired,
@@ -95,6 +101,7 @@ func ToLectureSessionDTO(m model.LectureSessionModel) LectureSessionDTO {
 		LectureSessionEndTime:                m.LectureSessionEndTime,
 		LectureSessionPlace:                  m.LectureSessionPlace,
 		LectureSessionLectureID:              m.LectureSessionLectureID,
+		LectureSessionCertificateID:          m.LectureSessionCertificateID, // ✅ tambahan
 		LectureSessionCapacity:               m.LectureSessionCapacity,
 		LectureSessionIsPublic:               m.LectureSessionIsPublic,
 		LectureSessionIsRegistrationRequired: m.LectureSessionIsRegistrationRequired,

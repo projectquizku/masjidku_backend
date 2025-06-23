@@ -14,19 +14,30 @@ CREATE TABLE IF NOT EXISTS lecture_sessions (
     lecture_session_is_paid BOOLEAN DEFAULT FALSE,
     lecture_session_price INT,
     lecture_session_payment_deadline TIMESTAMP,
+
+    -- Kolom pengganti: relasi ke sertifikat
+    lecture_session_certificate_id UUID REFERENCES certificates(certificate_id) ON DELETE SET NULL,
+
     lecture_session_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Indexing
-CREATE INDEX IF NOT EXISTS idx_lecture_sessions_lecture ON lecture_sessions(lecture_session_lecture_id);
-CREATE INDEX IF NOT EXISTS idx_lecture_sessions_start_time ON lecture_sessions(lecture_session_start_time);
-CREATE INDEX IF NOT EXISTS idx_lecture_sessions_end_time ON lecture_sessions(lecture_session_end_time);
+CREATE INDEX IF NOT EXISTS idx_lecture_sessions_lecture 
+  ON lecture_sessions(lecture_session_lecture_id);
+CREATE INDEX IF NOT EXISTS idx_lecture_sessions_start_time 
+  ON lecture_sessions(lecture_session_start_time);
+CREATE INDEX IF NOT EXISTS idx_lecture_sessions_end_time 
+  ON lecture_sessions(lecture_session_end_time);
 
 -- Index untuk pencarian berdasarkan ID teacher dalam JSON
 CREATE INDEX IF NOT EXISTS idx_lecture_sessions_teacher_id 
-ON lecture_sessions ((lecture_session_teacher->>'id'));
+  ON lecture_sessions ((lecture_session_teacher->>'id'));
 CREATE INDEX IF NOT EXISTS idx_lecture_sessions_teacher_name 
-ON lecture_sessions ((lecture_session_teacher->>'name'));
+  ON lecture_sessions ((lecture_session_teacher->>'name'));
+
+-- Index untuk sertifikat per sesi
+CREATE INDEX IF NOT EXISTS idx_lecture_session_certificate_id 
+  ON lecture_sessions (lecture_session_certificate_id);
 
 
 

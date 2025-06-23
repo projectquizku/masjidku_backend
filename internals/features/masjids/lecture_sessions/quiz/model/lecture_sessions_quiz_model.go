@@ -11,7 +11,7 @@ type LectureSessionsQuizModel struct {
 	LectureSessionsQuizLectureSessionID string    `gorm:"column:lecture_sessions_quiz_lecture_session_id;type:uuid;not null" json:"lecture_sessions_quiz_lecture_session_id"`
 	LectureSessionsQuizCreatedAt        time.Time `gorm:"column:lecture_sessions_quiz_created_at;autoCreateTime" json:"lecture_sessions_quiz_created_at"`
 }
-
+        
 func (LectureSessionsQuizModel) TableName() string {
 	return "lecture_sessions_quiz"
 }

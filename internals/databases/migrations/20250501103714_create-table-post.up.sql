@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS posts (
   post_content TEXT NOT NULL,
   post_image_url TEXT,
   post_is_published BOOLEAN DEFAULT FALSE,
-  post_type VARCHAR(50) DEFAULT 'text',
+  post_type VARCHAR(50) DEFAULT 'text', -- 'text', 'lecture_info', 'event_info', etc.
+  post_metadata JSONB, -- 💡 fleksibel untuk info tambahan per jenis post
   post_masjid_id UUID REFERENCES masjids(masjid_id) ON DELETE CASCADE,
   post_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   post_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -12,11 +13,17 @@ CREATE TABLE IF NOT EXISTS posts (
   post_deleted_at TIMESTAMP
 );
 
+
 -- Indexing
 CREATE INDEX IF NOT EXISTS idx_posts_masjid_id ON posts(post_masjid_id);
 CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts(post_user_id);
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(post_created_at);
 CREATE INDEX IF NOT EXISTS idx_posts_deleted_at ON posts(post_deleted_at);
+
+-- Opsional: indexing JSONB berdasarkan kebutuhan query
+CREATE INDEX IF NOT EXISTS idx_posts_metadata_lecture_id ON posts((post_metadata->>'lecture_id'));
+CREATE INDEX IF NOT EXISTS idx_posts_metadata_event_id ON posts((post_metadata->>'event_id'));
+
 
 
 CREATE TABLE IF NOT EXISTS post_likes (

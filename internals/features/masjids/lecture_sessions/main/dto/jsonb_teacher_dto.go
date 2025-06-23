@@ -7,17 +7,16 @@ type JSONBTeacher struct {
 	Name string `json:"name"`
 }
 
-// Converter
-func (jt JSONBTeacher) ToModel() model.JSONBTeacher {
+func (j JSONBTeacher) ToModel() model.JSONBTeacher {
 	return model.JSONBTeacher{
-		ID:   jt.ID,
-		Name: jt.Name,
+		ID:   j.ID,
+		Name: j.Name,
 	}
 }
 
-func FromModel(jt model.JSONBTeacher) JSONBTeacher {
+func FromModel(m model.JSONBTeacher) JSONBTeacher {
 	return JSONBTeacher{
-		ID:   jt.ID,
-		Name: jt.Name,
+		ID:   m.ID,
+		Name: m.Name,
 	}
 }

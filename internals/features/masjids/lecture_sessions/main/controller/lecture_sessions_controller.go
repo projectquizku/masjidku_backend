@@ -75,8 +75,6 @@ func (ctrl *LectureSessionController) GetLectureSessionByID(c *fiber.Ctx) error 
 	return c.JSON(dto.ToLectureSessionDTO(session))
 }
 
-// ✅ POST /api/a/lecture-sessions/by-lecture-id
-
 // ✅ GET lecture sessions by lecture_id (adaptif: jika login, include user progress)
 func (ctrl *LectureSessionController) GetByLectureID(c *fiber.Ctx) error {
 	type RequestBody struct {
@@ -205,6 +203,7 @@ func (ctrl *LectureSessionController) UpdateLectureSession(c *fiber.Ctx) error {
 	existing.LectureSessionEndTime = body.LectureSessionEndTime
 	existing.LectureSessionPlace = body.LectureSessionPlace
 	existing.LectureSessionLectureID = body.LectureSessionLectureID
+	existing.LectureSessionCertificateID = body.LectureSessionCertificateID 
 	existing.LectureSessionCapacity = body.LectureSessionCapacity
 	existing.LectureSessionIsPublic = body.LectureSessionIsPublic
 	existing.LectureSessionIsRegistrationRequired = body.LectureSessionIsRegistrationRequired

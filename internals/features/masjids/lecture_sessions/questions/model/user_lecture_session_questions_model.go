@@ -14,5 +14,5 @@ type LectureSessionsUserQuestionModel struct {
 }
 
 func (LectureSessionsUserQuestionModel) TableName() string {
-	return "lecture_sessions_user_questions"
+	return "user_lecture_sessions_questions"
 }

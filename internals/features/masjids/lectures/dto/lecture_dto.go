@@ -16,44 +16,43 @@ type Teacher struct {
 
 // Request dari frontend → backend
 type LectureRequest struct {
-	LectureTitle              string    `json:"lecture_title"`
-	LectureDescription        string    `json:"lecture_description"`
-	LectureMasjidID           uuid.UUID `json:"lecture_masjid_id"`
-	TotalLectureSessions      *int      `json:"total_lecture_sessions"`
-	LectureIsRecurring        bool      `json:"lecture_is_recurring"`
-	LectureRecurrenceInterval *int      `json:"lecture_recurrence_interval"`
-	LectureImageURL           *string   `json:"lecture_image_url"`
-	LectureTeachers           []Teacher `json:"lecture_teachers"`
+	LectureTitle         string     `json:"lecture_title"`
+	LectureDescription   string     `json:"lecture_description"`
+	LectureMasjidID      uuid.UUID  `json:"lecture_masjid_id"`
+	TotalLectureSessions *int       `json:"total_lecture_sessions"`
+	LectureImageURL      *string    `json:"lecture_image_url"`
+	LectureTeachers      []Teacher  `json:"lecture_teachers"`
+	LectureStatus        bool       `json:"lecture_status"` // false = ongoing, true = finished
+	LectureCertificateID *uuid.UUID `json:"lecture_certificate_id,omitempty"`
 }
 
 // Response ke frontend
 type LectureResponse struct {
-	LectureID                 uuid.UUID `json:"lecture_id"`
-	LectureTitle              string    `json:"lecture_title"`
-	LectureDescription        string    `json:"lecture_description"`
-	LectureMasjidID           uuid.UUID `json:"lecture_masjid_id"`
-	TotalLectureSessions      *int      `json:"total_lecture_sessions"`
-	LectureIsRecurring        bool      `json:"lecture_is_recurring"`
-	LectureRecurrenceInterval *int      `json:"lecture_recurrence_interval"`
-	LectureImageURL           *string   `json:"lecture_image_url"`
-	LectureTeachers           []Teacher `json:"lecture_teachers"`
-	LectureCreatedAt          string    `json:"lecture_created_at"`
+	LectureID            uuid.UUID  `json:"lecture_id"`
+	LectureTitle         string     `json:"lecture_title"`
+	LectureDescription   string     `json:"lecture_description"`
+	LectureMasjidID      uuid.UUID  `json:"lecture_masjid_id"`
+	TotalLectureSessions *int       `json:"total_lecture_sessions"`
+	LectureImageURL      *string    `json:"lecture_image_url"`
+	LectureTeachers      []Teacher  `json:"lecture_teachers"`
+	LectureStatus        bool       `json:"lecture_status"` // false = ongoing, true = finished
+	LectureCertificateID *uuid.UUID `json:"lecture_certificate_id,omitempty"`
+	LectureCreatedAt     string     `json:"lecture_created_at"`
 }
 
 // Convert request → model
 func (r *LectureRequest) ToModel() *model.LectureModel {
-	// Encode teachers ke JSON
 	teacherJSON, _ := json.Marshal(r.LectureTeachers)
 
 	return &model.LectureModel{
-		LectureTitle:              r.LectureTitle,
-		LectureDescription:        r.LectureDescription,
-		LectureMasjidID:           r.LectureMasjidID,
-		TotalLectureSessions:      r.TotalLectureSessions,
-		LectureIsRecurring:        r.LectureIsRecurring,
-		LectureRecurrenceInterval: r.LectureRecurrenceInterval,
-		LectureImageURL:           r.LectureImageURL,
-		LectureTeachers:           datatypes.JSON(teacherJSON),
+		LectureTitle:         r.LectureTitle,
+		LectureDescription:   r.LectureDescription,
+		LectureMasjidID:      r.LectureMasjidID,
+		TotalLectureSessions: r.TotalLectureSessions,
+		LectureImageURL:      r.LectureImageURL,
+		LectureTeachers:      datatypes.JSON(teacherJSON),
+		LectureStatus:        r.LectureStatus,
+		LectureCertificateID: r.LectureCertificateID,
 	}
 }
 
@@ -65,15 +64,15 @@ func ToLectureResponse(m *model.LectureModel) *LectureResponse {
 	}
 
 	return &LectureResponse{
-		LectureID:                 m.LectureID,
-		LectureTitle:              m.LectureTitle,
-		LectureDescription:        m.LectureDescription,
-		LectureMasjidID:           m.LectureMasjidID,
-		TotalLectureSessions:      m.TotalLectureSessions,
-		LectureIsRecurring:        m.LectureIsRecurring,
-		LectureRecurrenceInterval: m.LectureRecurrenceInterval,
-		LectureImageURL:           m.LectureImageURL,
-		LectureTeachers:           teachers,
-		LectureCreatedAt:          m.LectureCreatedAt.Format("2006-01-02 15:04:05"),
+		LectureID:            m.LectureID,
+		LectureTitle:         m.LectureTitle,
+		LectureDescription:   m.LectureDescription,
+		LectureMasjidID:      m.LectureMasjidID,
+		TotalLectureSessions: m.TotalLectureSessions,
+		LectureImageURL:      m.LectureImageURL,
+		LectureTeachers:      teachers,
+		LectureStatus:        m.LectureStatus,
+		LectureCertificateID: m.LectureCertificateID,
+		LectureCreatedAt:     m.LectureCreatedAt.Format("2006-01-02 15:04:05"),
 	}
 }
