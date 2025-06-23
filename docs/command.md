@@ -63,5 +63,3 @@ Wedangjahe217312!
 muhammadrizkisetyanto@MacBook-Air-Muhammad quizku % go run internals/seeds/cmd/main.go all      
 
 
-# Token github gapenting
-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
