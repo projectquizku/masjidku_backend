@@ -35,14 +35,14 @@ type CreatePostRequest struct {
 }
 
 // ============================
-// Update Request DTO
+// Update Request DTO (semua opsional)
 // ============================
 type UpdatePostRequest struct {
-	PostTitle       string  `json:"post_title" validate:"required,min=3"`
-	PostContent     string  `json:"post_content" validate:"required"`
-	PostImageURL    *string `json:"post_image_url"`
-	PostIsPublished bool    `json:"post_is_published"`
-	PostType        string  `json:"post_type" validate:"omitempty,oneof=text image video"`
+	PostTitle       *string `json:"post_title"`
+	PostContent     *string `json:"post_content"`
+	PostImageURL    *string `json:"post_image_url"` // boleh dikosongkan
+	PostIsPublished *bool   `json:"post_is_published"`
+	PostType        *string `json:"post_type"`
 }
 
 // ============================
@@ -77,9 +77,19 @@ func ToPostModel(req CreatePostRequest, userID *string) model.PostModel {
 }
 
 func UpdatePostModel(m *model.PostModel, req UpdatePostRequest) {
-	m.PostTitle = req.PostTitle
-	m.PostContent = req.PostContent
-	m.PostImageURL = req.PostImageURL
-	m.PostIsPublished = req.PostIsPublished
-	m.PostType = req.PostType
+	if req.PostTitle != nil {
+		m.PostTitle = *req.PostTitle
+	}
+	if req.PostContent != nil {
+		m.PostContent = *req.PostContent
+	}
+	if req.PostImageURL != nil {
+		m.PostImageURL = req.PostImageURL
+	}
+	if req.PostIsPublished != nil {
+		m.PostIsPublished = *req.PostIsPublished
+	}
+	if req.PostType != nil {
+		m.PostType = *req.PostType
+	}
 }

@@ -1,8 +1,11 @@
 package controller
 
 import (
+	"log"
 	"masjidku_backend/internals/features/masjids/lecture_sessions/main/dto"
 	"masjidku_backend/internals/features/masjids/lecture_sessions/main/model"
+	helper "masjidku_backend/internals/helpers"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -17,30 +20,94 @@ func NewLectureSessionController(db *gorm.DB) *LectureSessionController {
 	return &LectureSessionController{DB: db}
 }
 
-// ================================
-// CREATE
-// ================================
 func (ctrl *LectureSessionController) CreateLectureSession(c *fiber.Ctx) error {
-	var body dto.CreateLectureSessionRequest
-	if err := c.BodyParser(&body); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Permintaan tidak valid")
-	}
+	log.Println("[INFO] Menerima request untuk membuat sesi kajian")
 
-	// Validasi user login (jika diperlukan)
+	// Validasi user login (optional)
 	userIDRaw := c.Locals("user_id")
 	if userIDRaw == nil {
 		return fiber.NewError(fiber.StatusUnauthorized, "User belum login")
 	}
 
-	// Konversi request ke model
-	newSession := body.ToModel()
+	// Ambil dan validasi field wajib
+	title := c.FormValue("lecture_session_title")
+	startStr := c.FormValue("lecture_session_start_time")
+	endStr := c.FormValue("lecture_session_end_time")
+	teacherJSON := c.FormValue("lecture_session_teacher")
 
-	// Simpan ke DB
-	if err := ctrl.DB.Create(&newSession).Error; err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Gagal membuat sesi kajian")
+	if title == "" || startStr == "" || endStr == "" || teacherJSON == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Field wajib tidak lengkap")
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(dto.ToLectureSessionDTO(newSession))
+	// Parse waktu
+	startTime, err := time.Parse(time.RFC3339, startStr)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Format start time tidak valid (RFC3339)")
+	}
+	endTime, err := time.Parse(time.RFC3339, endStr)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Format end time tidak valid (RFC3339)")
+	}
+
+	// Parse teacher JSON
+	var teacher dto.JSONBTeacher
+	if err := teacher.FromString(teacherJSON); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Format teacher tidak valid")
+	}
+
+	// Parse opsional UUID
+	var lectureID *uuid.UUID
+	if val := c.FormValue("lecture_session_lecture_id"); val != "" {
+		if parsed, err := uuid.Parse(val); err == nil {
+			lectureID = &parsed
+		}
+	}
+
+	var certificateID *uuid.UUID
+	if val := c.FormValue("lecture_session_certificate_id"); val != "" {
+		if parsed, err := uuid.Parse(val); err == nil {
+			certificateID = &parsed
+		}
+	}
+
+	// Parse opsional string dan waktu
+	description := c.FormValue("lecture_session_description")
+	place := c.FormValue("lecture_session_place")
+
+	// Upload gambar jika ada
+	var imageURL *string
+	if file, err := c.FormFile("lecture_session_image_url"); err == nil && file != nil {
+		url, err := helper.UploadImageAsWebPToSupabase("lecture_sessions", file)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "Gagal upload gambar")
+		}
+		imageURL = &url
+	} else if val := c.FormValue("lecture_session_image_url"); val != "" {
+		imageURL = &val
+	}
+
+	// Susun DTO
+	req := dto.CreateLectureSessionRequest{
+		LectureSessionTitle:         title,
+		LectureSessionDescription:   description,
+		LectureSessionTeacher:       teacher,
+		LectureSessionStartTime:     startTime,
+		LectureSessionEndTime:       endTime,
+		LectureSessionPlace:         &place,
+		LectureSessionImageURL:      imageURL,
+		LectureSessionLectureID:     lectureID,
+		LectureSessionCertificateID: certificateID,
+	}
+
+	// Simpan ke DB
+	lectureSession := req.ToModel()
+	if err := ctrl.DB.Create(&lectureSession).Error; err != nil {
+		log.Println("[ERROR] Gagal menyimpan ke DB:", err)
+		return fiber.NewError(fiber.StatusInternalServerError, "Gagal menyimpan sesi kajian")
+	}
+
+	// Response sukses
+	return c.Status(fiber.StatusCreated).JSON(dto.ToLectureSessionDTO(lectureSession))
 }
 
 // ================================
@@ -171,9 +238,6 @@ func (ctrl *LectureSessionController) GetByLectureID(c *fiber.Ctx) error {
 	})
 }
 
-// ================================
-// UPDATE
-// ================================
 func (ctrl *LectureSessionController) UpdateLectureSession(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	sessionID, err := uuid.Parse(idParam)
@@ -181,40 +245,73 @@ func (ctrl *LectureSessionController) UpdateLectureSession(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "ID tidak valid")
 	}
 
+	// Ambil data existing
 	var existing model.LectureSessionModel
 	if err := ctrl.DB.First(&existing, "lecture_session_id = ?", sessionID).Error; err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Sesi kajian tidak ditemukan")
 	}
 
+	// Bind JSON ke struct sementara
 	var body dto.UpdateLectureSessionRequest
 	if err := c.BodyParser(&body); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Permintaan tidak valid")
 	}
 
-	if body.LectureSessionEndTime.Before(body.LectureSessionStartTime) {
-		return fiber.NewError(fiber.StatusBadRequest, "Waktu selesai tidak boleh sebelum waktu mulai")
+	// Validasi waktu
+	if !body.LectureSessionStartTime.IsZero() && !body.LectureSessionEndTime.IsZero() {
+		if body.LectureSessionEndTime.Before(body.LectureSessionStartTime) {
+			return fiber.NewError(fiber.StatusBadRequest, "Waktu selesai tidak boleh sebelum waktu mulai")
+		}
 	}
 
-	existing.LectureSessionTitle = body.LectureSessionTitle
-	existing.LectureSessionDescription = body.LectureSessionDescription
-	existing.LectureSessionTeacher = body.LectureSessionTeacher.ToModel()
-	existing.LectureSessionImageURL = body.LectureSessionImageURL
-	existing.LectureSessionStartTime = body.LectureSessionStartTime
-	existing.LectureSessionEndTime = body.LectureSessionEndTime
-	existing.LectureSessionPlace = body.LectureSessionPlace
-	existing.LectureSessionLectureID = body.LectureSessionLectureID
-	existing.LectureSessionCertificateID = body.LectureSessionCertificateID 
-	existing.LectureSessionCapacity = body.LectureSessionCapacity
-	existing.LectureSessionIsPublic = body.LectureSessionIsPublic
-	existing.LectureSessionIsRegistrationRequired = body.LectureSessionIsRegistrationRequired
-	existing.LectureSessionIsPaid = body.LectureSessionIsPaid
-	existing.LectureSessionPrice = body.LectureSessionPrice
-	existing.LectureSessionPaymentDeadline = body.LectureSessionPaymentDeadline
+	// ✅ Upload gambar baru jika ada
+	fileHeader, err := c.FormFile("lecture_session_image_url")
+	if err == nil && fileHeader != nil {
+		// 🔥 Hapus gambar lama
+		if existing.LectureSessionImageURL != nil {
+			_ = helper.DeleteFromSupabase("image", helper.ExtractSupabaseStoragePath(*existing.LectureSessionImageURL))
+		}
 
+		// ⬆️ Upload gambar baru
+		url, err := helper.UploadImageAsWebPToSupabase("lecture_sessions", fileHeader)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "Gagal upload gambar baru")
+		}
+		existing.LectureSessionImageURL = &url
+	}
+
+	// ✅ Update field satu per satu jika ada isinya
+	if body.LectureSessionTitle != "" {
+		existing.LectureSessionTitle = body.LectureSessionTitle
+	}
+	if body.LectureSessionDescription != "" {
+		existing.LectureSessionDescription = body.LectureSessionDescription
+	}
+	if body.LectureSessionTeacher.ID != "" && body.LectureSessionTeacher.Name != "" {
+		existing.LectureSessionTeacher = body.LectureSessionTeacher.ToModel()
+	}
+	if !body.LectureSessionStartTime.IsZero() {
+		existing.LectureSessionStartTime = body.LectureSessionStartTime
+	}
+	if !body.LectureSessionEndTime.IsZero() {
+		existing.LectureSessionEndTime = body.LectureSessionEndTime
+	}
+	if body.LectureSessionPlace != nil {
+		existing.LectureSessionPlace = body.LectureSessionPlace
+	}
+	if body.LectureSessionLectureID != nil {
+		existing.LectureSessionLectureID = body.LectureSessionLectureID
+	}
+	if body.LectureSessionCertificateID != nil {
+		existing.LectureSessionCertificateID = body.LectureSessionCertificateID
+	}
+
+	// Simpan ke database
 	if err := ctrl.DB.Save(&existing).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Gagal memperbarui sesi kajian")
 	}
 
+	// ✅ Kirim response dalam format DTO
 	return c.JSON(dto.ToLectureSessionDTO(existing))
 }
 

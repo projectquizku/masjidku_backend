@@ -29,15 +29,44 @@ func (ctrl *UserLectureController) CreateUserLecture(c *fiber.Ctx) error {
 		})
 	}
 
-	// 🔒 Validasi: pastikan Lecture dan User memang ada
-	var count int64
-	if err := ctrl.DB.Table("lectures").Where("lecture_id = ?", req.UserLectureLectureID).Count(&count).Error; err != nil || count == 0 {
-		return c.Status(400).JSON(fiber.Map{"message": "Lecture tidak ditemukan atau tidak valid"})
-	}
-	if err := ctrl.DB.Table("users").Where("id = ?", req.UserLectureUserID).Count(&count).Error; err != nil || count == 0 {
-		return c.Status(400).JSON(fiber.Map{"message": "User tidak ditemukan atau tidak valid"})
+	// 🔒 Validasi: pastikan Lecture memang ada
+	var lectureCount int64
+	if err := ctrl.DB.Table("lectures").
+		Where("lecture_id = ?", req.UserLectureLectureID).
+		Count(&lectureCount).Error; err != nil || lectureCount == 0 {
+		return c.Status(400).JSON(fiber.Map{
+			"message": "Lecture tidak ditemukan atau tidak valid",
+		})
 	}
 
+	// 🔒 Validasi: pastikan User memang ada
+	var userCount int64
+	if err := ctrl.DB.Table("users").
+		Where("id = ?", req.UserLectureUserID).
+		Count(&userCount).Error; err != nil || userCount == 0 {
+		return c.Status(400).JSON(fiber.Map{
+			"message": "User tidak ditemukan atau tidak valid",
+		})
+	}
+
+	// 🔒 Validasi unik: user tidak boleh daftar dua kali
+	var existingCount int64
+	if err := ctrl.DB.Model(&model.UserLectureModel{}).
+		Where("user_lecture_user_id = ? AND user_lecture_lecture_id = ?",
+			req.UserLectureUserID, req.UserLectureLectureID).
+		Count(&existingCount).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Gagal memeriksa duplikasi",
+			"error":   err.Error(),
+		})
+	}
+	if existingCount > 0 {
+		return c.Status(409).JSON(fiber.Map{
+			"message": "User sudah terdaftar dalam kajian ini",
+		})
+	}
+
+	// ✅ Simpan partisipasi
 	newUserLecture := req.ToModel()
 	if err := ctrl.DB.Create(newUserLecture).Error; err != nil {
 		return c.Status(500).JSON(fiber.Map{
@@ -52,7 +81,6 @@ func (ctrl *UserLectureController) CreateUserLecture(c *fiber.Ctx) error {
 	})
 }
 
-// 🟢 GET /api/a/user-lectures?lecture_id=...
 // 🟢 POST /api/u/user-lectures/by-lecture
 func (ctrl *UserLectureController) GetUsersByLecture(c *fiber.Ctx) error {
 	// Ambil dari JSON body
@@ -60,23 +88,33 @@ func (ctrl *UserLectureController) GetUsersByLecture(c *fiber.Ctx) error {
 		LectureID string `json:"lecture_id"`
 	}
 	if err := c.BodyParser(&payload); err != nil || payload.LectureID == "" {
-		return c.Status(400).JSON(fiber.Map{"message": "lecture_id wajib dikirim"})
+		return c.Status(400).JSON(fiber.Map{
+			"message": "lecture_id wajib dikirim",
+		})
 	}
 
 	// Validasi UUID
 	lectureID, err := uuid.Parse(payload.LectureID)
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"message": "lecture_id tidak valid", "error": err.Error()})
+		return c.Status(400).JSON(fiber.Map{
+			"message": "lecture_id tidak valid",
+			"error":   err.Error(),
+		})
 	}
 
 	// Ambil data peserta dari DB
 	var participants []model.UserLectureModel
-	if err := ctrl.DB.Where("user_lecture_lecture_id = ?", lectureID).Find(&participants).Error; err != nil {
-		return c.Status(500).JSON(fiber.Map{"message": "Gagal mengambil peserta", "error": err.Error()})
+	if err := ctrl.DB.
+		Where("user_lecture_lecture_id = ?", lectureID).
+		Find(&participants).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Gagal mengambil peserta",
+			"error":   err.Error(),
+		})
 	}
 
 	// Konversi ke response DTO
-	var result []dto.UserLectureResponse
+	result := make([]dto.UserLectureResponse, 0, len(participants))
 	for _, p := range participants {
 		result = append(result, *dto.ToUserLectureResponse(&p))
 	}
@@ -88,120 +126,111 @@ func (ctrl *UserLectureController) GetUsersByLecture(c *fiber.Ctx) error {
 }
 
 func (ctrl *UserLectureController) GetUserLectureStats(c *fiber.Ctx) error {
-	userIDRaw := c.Locals("user_id")
 	userID := ""
-	if userIDRaw != nil {
-		userID = userIDRaw.(string)
+	if uid := c.Locals("user_id"); uid != nil {
+		userID = uid.(string)
 	}
 
 	masjidID := c.Query("masjid_id")
+	if masjidID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Parameter masjid_id wajib diisi")
+	}
+
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
 	month := c.Query("month")
 	year := c.Query("year")
 	specificDate := c.Query("specific_date")
 
-	if masjidID == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "Parameter masjid_id wajib diisi")
-	}
-
+	// Data hasil akhir
 	type Teacher struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
 	}
-
 	type Result struct {
 		model.LectureModel
 		UserLectureGradeResult       *int       `json:"user_lecture_grade_result,omitempty"`
 		UserLectureCreatedAt         *time.Time `json:"user_lecture_created_at,omitempty"`
-		TotalLectureSessions         int        `json:"total_lecture_sessions"`
 		CompleteTotalLectureSessions *int       `json:"complete_total_lecture_sessions,omitempty"`
 		LectureTeachers              []Teacher  `json:"lecture_teachers,omitempty"`
 	}
 
-	// Step 1: Ambil semua data dari tabel lectures (termasuk JSONB pengajar)
-	query := ctrl.DB.Table("lectures AS l").
-		Select([]string{
-			"l.*",
-			"l.total_lecture_sessions",
-		}).
-		Where("l.lecture_masjid_id = ?", masjidID)
+	// Ambil semua lectures berdasarkan filter masjid_id
+	var lectures []model.LectureModel
+	db := ctrl.DB.Where("lecture_masjid_id = ?", masjidID)
 
-	if userID != "" {
-		query = query.Select(append(query.Statement.Selects,
-			"ul.user_lecture_grade_result",
-			"ul.user_lecture_created_at",
-			"ul.user_lecture_total_completed_sessions AS complete_total_lecture_sessions",
-		)).Joins(`
-			LEFT JOIN user_lectures ul 
-			ON ul.user_lecture_lecture_id = l.lecture_id 
-			AND ul.user_lecture_user_id = ?
-		`, userID)
-	} else {
-		query = query.Select(append(query.Statement.Selects,
-			"NULL AS user_lecture_grade_result",
-			"NULL AS user_lecture_created_at",
-			"NULL AS complete_total_lecture_sessions",
-		)).Joins("LEFT JOIN user_lectures ul ON false")
-	}
-
-	// Filter waktu
 	switch {
 	case specificDate != "":
-		query = query.Where("DATE(l.lecture_created_at) = ?", specificDate)
+		db = db.Where("DATE(lecture_created_at) = ?", specificDate)
 	case startDate != "" && endDate != "":
-		query = query.Where("l.lecture_created_at BETWEEN ? AND ?", startDate, endDate)
+		db = db.Where("lecture_created_at BETWEEN ? AND ?", startDate, endDate)
 	default:
 		if month != "" {
-			query = query.Where("EXTRACT(MONTH FROM l.lecture_created_at) = ?", month)
+			db = db.Where("EXTRACT(MONTH FROM lecture_created_at) = ?", month)
 		}
 		if year != "" {
-			query = query.Where("EXTRACT(YEAR FROM l.lecture_created_at) = ?", year)
+			db = db.Where("EXTRACT(YEAR FROM lecture_created_at) = ?", year)
 		}
 	}
 
-	query = query.Order("l.lecture_created_at DESC")
-
-	// Step 2: Eksekusi dan parsing hasil
-	type rawLecture struct {
-		model.LectureModel
-		UserLectureGradeResult       *int       `json:"user_lecture_grade_result"`
-		UserLectureCreatedAt         *time.Time `json:"user_lecture_created_at"`
-		TotalLectureSessions         int        `json:"total_lecture_sessions"`
-		CompleteTotalLectureSessions *int       `json:"complete_total_lecture_sessions"`
-	}
-
-	var rawLectures []rawLecture
-	if err := query.Scan(&rawLectures).Error; err != nil {
+	if err := db.Order("lecture_created_at DESC").Find(&lectures).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Gagal mengambil data kajian")
 	}
 
-	// Step 3: Unmarshal JSONB teachers
+	// Jika user login, ambil semua user_lectures-nya sekaligus
+	var userLectures []model.UserLectureModel
+	lectureIDs := make([]uuid.UUID, 0, len(lectures))
+	for _, l := range lectures {
+		lectureIDs = append(lectureIDs, l.LectureID)
+	}
+
+	userLectureMap := map[uuid.UUID]model.UserLectureModel{}
+	if userID != "" {
+		if err := ctrl.DB.
+			Where("user_lecture_user_id = ? AND user_lecture_lecture_id IN ?", userID, lectureIDs).
+			Find(&userLectures).Error; err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "Gagal mengambil data partisipasi")
+		}
+		for _, ul := range userLectures {
+			userLectureMap[ul.UserLectureLectureID] = ul
+		}
+	}
+
+	// Gabungkan lecture + user_lecture + parse teacher
 	var results []Result
-	for _, r := range rawLectures {
+	for _, lecture := range lectures {
 		var teachers []Teacher
-		if r.LectureTeachers != nil {
-			_ = json.Unmarshal(r.LectureTeachers, &teachers)
+		if lecture.LectureTeachers != nil {
+			_ = json.Unmarshal(lecture.LectureTeachers, &teachers)
+		}
+
+		var grade *int
+		var createdAt *time.Time
+		var completed *int
+
+		if ul, ok := userLectureMap[lecture.LectureID]; ok {
+			grade = ul.UserLectureGradeResult
+			createdAt = &ul.UserLectureCreatedAt
+			completed = &ul.UserLectureTotalCompletedSessions
 		}
 
 		results = append(results, Result{
-			LectureModel:                 r.LectureModel,
-			UserLectureGradeResult:       r.UserLectureGradeResult,
-			UserLectureCreatedAt:         r.UserLectureCreatedAt,
-			TotalLectureSessions:         r.TotalLectureSessions,
-			CompleteTotalLectureSessions: r.CompleteTotalLectureSessions,
+			LectureModel:                 lecture,
+			UserLectureGradeResult:       grade,
+			UserLectureCreatedAt:         createdAt,
+			CompleteTotalLectureSessions: completed,
 			LectureTeachers:              teachers,
 		})
 	}
 
-	// Step 4: Response
-	message := "Berhasil mengambil daftar kajian"
+	// Kirim hasil
+	msg := "Berhasil mengambil daftar kajian"
 	if userID != "" {
-		message += " (dengan progress jika login)"
+		msg += " (dengan progress jika login)"
 	}
 
 	return c.JSON(fiber.Map{
-		"message": message,
+		"message": msg,
 		"data":    results,
 	})
 }

@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Struktur JSON untuk kolom lecture_session_teacher (JSONB)
 type JSONBTeacher struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
@@ -33,23 +34,17 @@ func (j *JSONBTeacher) Scan(value interface{}) error {
 }
 
 type LectureSessionModel struct {
-	LectureSessionID                     uuid.UUID    `gorm:"column:lecture_session_id;primaryKey;type:uuid;default:gen_random_uuid()" json:"lecture_session_id"`
-	LectureSessionTitle                  string       `gorm:"column:lecture_session_title;type:varchar(255);not null" json:"lecture_session_title"`
-	LectureSessionDescription            string       `gorm:"column:lecture_session_description;type:text" json:"lecture_session_description"`
-	LectureSessionTeacher                JSONBTeacher `gorm:"column:lecture_session_teacher;type:jsonb;not null" json:"lecture_session_teacher"`
-	LectureSessionStartTime              time.Time    `gorm:"column:lecture_session_start_time;not null" json:"lecture_session_start_time"`
-	LectureSessionEndTime                time.Time    `gorm:"column:lecture_session_end_time;not null" json:"lecture_session_end_time"`
-	LectureSessionPlace                  *string      `gorm:"column:lecture_session_place;type:text" json:"lecture_session_place"`
-	LectureSessionImageURL               *string      `gorm:"column:lecture_session_image_url;type:text" json:"lecture_session_image_url"`
-	LectureSessionLectureID              *uuid.UUID   `gorm:"column:lecture_session_lecture_id;type:uuid" json:"lecture_session_lecture_id"`
-	LectureSessionCertificateID          *uuid.UUID   `gorm:"column:lecture_session_certificate_id;type:uuid" json:"lecture_session_certificate_id,omitempty"`
-	LectureSessionCapacity               *int         `gorm:"column:lecture_session_capacity" json:"lecture_session_capacity"`
-	LectureSessionIsPublic               bool         `gorm:"column:lecture_session_is_public;default:true" json:"lecture_session_is_public"`
-	LectureSessionIsRegistrationRequired bool         `gorm:"column:lecture_session_is_registration_required;default:false" json:"lecture_session_is_registration_required"`
-	LectureSessionIsPaid                 bool         `gorm:"column:lecture_session_is_paid;default:false" json:"lecture_session_is_paid"`
-	LectureSessionPrice                  *int         `gorm:"column:lecture_session_price" json:"lecture_session_price"`
-	LectureSessionPaymentDeadline        *time.Time   `gorm:"column:lecture_session_payment_deadline" json:"lecture_session_payment_deadline"`
-	LectureSessionCreatedAt              time.Time    `gorm:"column:lecture_session_created_at;autoCreateTime" json:"lecture_session_created_at"`
+	LectureSessionID            uuid.UUID    `gorm:"column:lecture_session_id;primaryKey;type:uuid;default:gen_random_uuid()" json:"lecture_session_id"`
+	LectureSessionTitle         string       `gorm:"column:lecture_session_title;type:varchar(255);not null" json:"lecture_session_title"`
+	LectureSessionDescription   string       `gorm:"column:lecture_session_description;type:text" json:"lecture_session_description"`
+	LectureSessionTeacher       JSONBTeacher `gorm:"column:lecture_session_teacher;type:jsonb;not null" json:"lecture_session_teacher"`
+	LectureSessionStartTime     time.Time    `gorm:"column:lecture_session_start_time;not null" json:"lecture_session_start_time"`
+	LectureSessionEndTime       time.Time    `gorm:"column:lecture_session_end_time;not null" json:"lecture_session_end_time"`
+	LectureSessionPlace         *string      `gorm:"column:lecture_session_place;type:text" json:"lecture_session_place"`
+	LectureSessionImageURL      *string      `gorm:"column:lecture_session_image_url;type:text" json:"lecture_session_image_url"`
+	LectureSessionLectureID     *uuid.UUID   `gorm:"column:lecture_session_lecture_id;type:uuid" json:"lecture_session_lecture_id"`
+	LectureSessionCertificateID *uuid.UUID   `gorm:"column:lecture_session_certificate_id;type:uuid" json:"lecture_session_certificate_id,omitempty"`
+	LectureSessionCreatedAt     time.Time    `gorm:"column:lecture_session_created_at;autoCreateTime" json:"lecture_session_created_at"`
 }
 
 func (LectureSessionModel) TableName() string {
@@ -59,7 +54,7 @@ func (LectureSessionModel) TableName() string {
 func SyncTotalLectureSessions(db *gorm.DB, lectureID uuid.UUID) error {
 	log.Println("[SERVICE] SyncTotalLectureSessions - lectureID:", lectureID)
 
-	err := db.Exec(`
+	return db.Exec(`
 		UPDATE lectures
 		SET total_lecture_sessions = (
 			SELECT COUNT(*) FROM lecture_sessions
@@ -67,11 +62,6 @@ func SyncTotalLectureSessions(db *gorm.DB, lectureID uuid.UUID) error {
 		)
 		WHERE lecture_id = ?
 	`, lectureID, lectureID).Error
-
-	if err != nil {
-		log.Println("[ERROR] Failed to sync total_lecture_sessions:", err)
-	}
-	return err
 }
 
 func (s *LectureSessionModel) AfterSave(tx *gorm.DB) error {

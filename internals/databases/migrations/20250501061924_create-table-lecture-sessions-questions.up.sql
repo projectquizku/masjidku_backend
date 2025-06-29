@@ -30,7 +30,7 @@ CREATE INDEX IF NOT EXISTS idx_lecture_sessions_questions_created_at
 
 
 -- =============================
--- TABLE: lecture_sessions_user_questions
+-- TABLE: user_lecture_sessions_questions
 -- =============================
 CREATE TABLE IF NOT EXISTS user_lecture_sessions_questions (
   lecture_sessions_user_question_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -44,8 +44,8 @@ CREATE TABLE IF NOT EXISTS user_lecture_sessions_questions (
 );
 
 -- Indexing untuk efisiensi kueri
-CREATE INDEX IF NOT EXISTS idx_lecture_sessions_user_questions_question_id
-  ON lecture_sessions_user_questions (lecture_sessions_user_question_question_id);
+CREATE INDEX IF NOT EXISTS idx_user_lecture_sessions_questions_question_id
+  ON user_lecture_sessions_questions (lecture_sessions_user_question_question_id);
 
-CREATE INDEX IF NOT EXISTS idx_lecture_sessions_user_questions_created_at
-  ON lecture_sessions_user_questions (lecture_sessions_user_question_created_at);
+CREATE INDEX IF NOT EXISTS idx_user_lecture_sessions_questions_created_at
+  ON user_lecture_sessions_questions (lecture_sessions_user_question_created_at);

@@ -4,7 +4,9 @@ import (
 	"log"
 	"masjidku_backend/internals/features/home/articles/dto"
 	"masjidku_backend/internals/features/home/articles/model"
+	helper "masjidku_backend/internals/helpers"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -60,46 +62,136 @@ func (ctrl *CarouselController) GetAllCarouselsAdmin(c *fiber.Ctx) error {
 
 // ✅ POST: Admin - Tambah carousel
 func (ctrl *CarouselController) CreateCarousel(c *fiber.Ctx) error {
+	log.Println("[INFO] Menerima request untuk tambah carousel")
+
 	var req model.CarouselModel
-	if err := c.BodyParser(&req); err != nil {
-		return fiber.NewError(http.StatusBadRequest, "Input tidak valid")
-	}
 	req.CarouselID = uuid.New()
 	req.CarouselCreatedAt = time.Now()
 	req.CarouselUpdatedAt = time.Now()
 
-	if err := ctrl.DB.Create(&req).Error; err != nil {
-		log.Println("[ERROR] Gagal tambah carousel:", err)
-		return fiber.NewError(http.StatusInternalServerError, "Gagal tambah data")
+	// 📥 Ambil field selain gambar dari form
+	req.CarouselTitle = c.FormValue("carousel_title")
+	req.CarouselCaption = c.FormValue("carousel_caption")
+	req.CarouselTargetURL = c.FormValue("carousel_target_url")
+	req.CarouselType = c.FormValue("carousel_type")
+	req.CarouselOrder, _ = strconv.Atoi(c.FormValue("carousel_order"))
+	req.CarouselIsActive = c.FormValue("carousel_is_active") == "true"
+
+	// ✨ Optional: carousel_article_id (UUID)
+	if val := c.FormValue("carousel_article_id"); val != "" {
+		articleID, err := uuid.Parse(val)
+		if err == nil {
+			req.CarouselArticleID = &articleID
+		}
 	}
 
-	return c.Status(http.StatusCreated).JSON(fiber.Map{
+	// 🖼️ Upload image
+	fileHeader, err := c.FormFile("carousel_image_url")
+	if err == nil && fileHeader != nil {
+		// ✅ Jika file dikirim, upload
+		url, err := helper.UploadImageAsWebPToSupabase("carousel", fileHeader)
+		if err != nil {
+			log.Println("[ERROR] Gagal upload gambar:", err)
+			return fiber.NewError(fiber.StatusInternalServerError, "Gagal upload gambar")
+		}
+		req.CarouselImageURL = url
+	} else {
+		// ✅ Jika bukan file, ambil string
+		url := c.FormValue("carousel_image_url")
+		if url == "" {
+			return fiber.NewError(fiber.StatusBadRequest, "Gambar carousel wajib diisi (file atau URL)")
+		}
+		req.CarouselImageURL = url
+	}
+
+	// 💾 Simpan ke DB
+	if err := ctrl.DB.Create(&req).Error; err != nil {
+		log.Println("[ERROR] Gagal simpan carousel:", err)
+		return fiber.NewError(http.StatusInternalServerError, "Gagal menyimpan data")
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "Carousel berhasil ditambahkan",
 		"data":    dto.ConvertCarouselToDTO(req),
 	})
 }
 
-// ✅ PUT: Admin - Edit carousel
 func (ctrl *CarouselController) UpdateCarousel(c *fiber.Ctx) error {
 	id := c.Params("id")
-	var req model.CarouselModel
-	if err := c.BodyParser(&req); err != nil {
-		return fiber.NewError(http.StatusBadRequest, "Input tidak valid")
-	}
+	log.Printf("[INFO] Update carousel ID: %s\n", id)
 
 	var existing model.CarouselModel
 	if err := ctrl.DB.Where("carousel_id = ?", id).First(&existing).Error; err != nil {
-		return fiber.NewError(http.StatusNotFound, "Data tidak ditemukan")
+		log.Println("[ERROR] Carousel tidak ditemukan:", err)
+		return fiber.NewError(fiber.StatusNotFound, "Data tidak ditemukan")
 	}
 
-	req.CarouselUpdatedAt = time.Now()
-	if err := ctrl.DB.Model(&existing).Updates(req).Error; err != nil {
+	// Form parsing manual karena file + string campur
+	carouselTitle := c.FormValue("carousel_title")
+	carouselCaption := c.FormValue("carousel_caption")
+	carouselTargetURL := c.FormValue("carousel_target_url")
+	carouselType := c.FormValue("carousel_type")
+	carouselOrder, _ := strconv.Atoi(c.FormValue("carousel_order"))
+	carouselIsActive := c.FormValue("carousel_is_active") == "true"
+
+	// Optional UUID untuk article
+	var carouselArticleID *uuid.UUID
+	if val := c.FormValue("carousel_article_id"); val != "" {
+		if parsed, err := uuid.Parse(val); err == nil {
+			carouselArticleID = &parsed
+		}
+	}
+
+	// ⛔ Simpan URL gambar lama untuk hapus jika diganti
+	oldImageURL := existing.CarouselImageURL
+	newImageURL := oldImageURL // default: tidak berubah
+
+	// 🔁 Cek apakah ada file baru
+	fileHeader, err := c.FormFile("carousel_image_url")
+	if err == nil && fileHeader != nil {
+		// ✅ Jika file baru dikirim → upload
+		url, err := helper.UploadImageAsWebPToSupabase("carousel", fileHeader)
+		if err != nil {
+			log.Println("[ERROR] Upload gambar gagal:", err)
+			return fiber.NewError(fiber.StatusInternalServerError, "Upload gambar gagal")
+		}
+		newImageURL = url
+
+		// 🔥 Hapus gambar lama jika ada
+		if oldImageURL != "" && oldImageURL != newImageURL {
+			bucket, path, err := helper.ExtractSupabasePath(oldImageURL)
+			if err == nil {
+				_ = helper.DeleteFromSupabase(bucket, path)
+			}
+		}
+	} else {
+		// 🔁 Coba ambil string URL jika ada
+		str := c.FormValue("carousel_image_url")
+		if str != "" {
+			newImageURL = str
+		}
+	}
+
+	// 📝 Update field
+	existing.CarouselTitle = carouselTitle
+	existing.CarouselCaption = carouselCaption
+	existing.CarouselTargetURL = carouselTargetURL
+	existing.CarouselType = carouselType
+	existing.CarouselOrder = carouselOrder
+	existing.CarouselIsActive = carouselIsActive
+	existing.CarouselArticleID = carouselArticleID
+	existing.CarouselImageURL = newImageURL
+	existing.CarouselUpdatedAt = time.Now()
+
+	// 💾 Simpan ke DB
+	if err := ctrl.DB.Save(&existing).Error; err != nil {
 		log.Println("[ERROR] Gagal update carousel:", err)
 		return fiber.NewError(http.StatusInternalServerError, "Gagal update data")
 	}
 
 	return c.JSON(fiber.Map{
 		"message": "Carousel berhasil diupdate",
+		"data":    dto.ConvertCarouselToDTO(existing),
 	})
 }
 

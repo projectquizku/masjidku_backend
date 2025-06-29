@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
 type LectureModel struct {
@@ -17,7 +18,19 @@ type LectureModel struct {
 	LectureImageURL      *string        `gorm:"column:lecture_image_url;type:text" json:"lecture_image_url,omitempty"`
 	LectureTeachers      datatypes.JSON `gorm:"column:lecture_teachers;type:jsonb" json:"lecture_teachers,omitempty"`
 	LectureMasjidID      uuid.UUID      `gorm:"column:lecture_masjid_id;type:uuid;not null" json:"lecture_masjid_id"`
-	LectureCreatedAt     time.Time      `gorm:"column:lecture_created_at;autoCreateTime" json:"lecture_created_at"`
+
+	// Pendaftaran dan pembayaran (global untuk semua sesi)
+	LectureIsRegistrationRequired bool       `gorm:"column:lecture_is_registration_required;default:false" json:"lecture_is_registration_required"`
+	LectureIsPaid                 bool       `gorm:"column:lecture_is_paid;default:false" json:"lecture_is_paid"`
+	LecturePrice                  *int       `gorm:"column:lecture_price" json:"lecture_price,omitempty"`
+	LecturePaymentDeadline        *time.Time `gorm:"column:lecture_payment_deadline" json:"lecture_payment_deadline,omitempty"`
+	LecturePaymentScope           string     `gorm:"column:lecture_payment_scope;type:varchar(10);default:'lecture'" json:"lecture_payment_scope"`
+
+	// Umum
+	LectureCapacity  int            `gorm:"column:lecture_capacity" json:"lecture_capacity"`
+	LectureIsPublic  bool           `gorm:"column:lecture_is_public;default:true" json:"lecture_is_public"`
+	LectureCreatedAt time.Time      `gorm:"column:lecture_created_at;autoCreateTime" json:"lecture_created_at"`
+	DeletedAt        gorm.DeletedAt `gorm:"column:deleted_at;index" json:"-"`
 }
 
 func (LectureModel) TableName() string {

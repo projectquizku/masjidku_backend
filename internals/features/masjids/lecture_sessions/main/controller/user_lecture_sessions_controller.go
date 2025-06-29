@@ -24,16 +24,7 @@ func (ctrl *UserLectureSessionController) CreateUserLectureSession(c *fiber.Ctx)
 		return fiber.NewError(fiber.StatusBadRequest, "Permintaan tidak valid")
 	}
 
-	newRecord := model.UserLectureSessionModel{
-		UserLectureSessionAttendanceStatus: req.UserLectureSessionAttendanceStatus,
-		UserLectureSessionGradeResult:      req.UserLectureSessionGradeResult,
-		UserLectureSessionLectureSessionID: req.UserLectureSessionLectureSessionID,
-		UserLectureSessionUserID:           req.UserLectureSessionUserID,
-		UserLectureSessionIsRegistered:     req.UserLectureSessionIsRegistered,
-		UserLectureSessionHasPaid:          req.UserLectureSessionHasPaid,
-		UserLectureSessionPaidAmount:       req.UserLectureSessionPaidAmount,
-		UserLectureSessionPaymentTime:      req.UserLectureSessionPaymentTime,
-	}
+	newRecord := req.ToModel()
 
 	if err := ctrl.DB.Create(&newRecord).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Gagal membuat user lecture session")
@@ -83,15 +74,11 @@ func (ctrl *UserLectureSessionController) UpdateUserLectureSession(c *fiber.Ctx)
 		return fiber.NewError(fiber.StatusBadRequest, "Permintaan tidak valid")
 	}
 
-	// Update field
+	// Update field yang masih relevan
 	record.UserLectureSessionAttendanceStatus = req.UserLectureSessionAttendanceStatus
 	record.UserLectureSessionGradeResult = req.UserLectureSessionGradeResult
 	record.UserLectureSessionLectureSessionID = req.UserLectureSessionLectureSessionID
 	record.UserLectureSessionUserID = req.UserLectureSessionUserID
-	record.UserLectureSessionIsRegistered = req.UserLectureSessionIsRegistered
-	record.UserLectureSessionHasPaid = req.UserLectureSessionHasPaid
-	record.UserLectureSessionPaidAmount = req.UserLectureSessionPaidAmount
-	record.UserLectureSessionPaymentTime = req.UserLectureSessionPaymentTime
 
 	if err := ctrl.DB.Save(&record).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Gagal memperbarui data user lecture session")
@@ -123,34 +110,24 @@ func (ctrl *UserLectureSessionController) GetLectureSessionsWithUserProgress(c *
 		return fiber.NewError(fiber.StatusBadRequest, "Parameter masjid_id wajib diisi")
 	}
 
-	lectureID := c.Query("lecture_id") // ✅ Ambil parameter lecture_id
+	lectureID := c.Query("lecture_id")
 
 	type Result struct {
-		LectureSessionID                     string     `json:"lecture_session_id"`
-		LectureSessionTitle                  string     `json:"lecture_session_title"`
-		LectureSessionDescription            string     `json:"lecture_session_description"`
-		LectureSessionTeacherID              string     `json:"lecture_session_teacher_id"`
-		LectureSessionTeacherName            string     `json:"lecture_session_teacher_name"`
-		LectureSessionStartTime              time.Time  `json:"lecture_session_start_time"`
-		LectureSessionEndTime                time.Time  `json:"lecture_session_end_time"`
-		LectureSessionPlace                  string     `json:"lecture_session_place"`
-		LectureSessionLectureID              string     `json:"lecture_session_lecture_id"`
-		LectureSessionMasjidID               string     `json:"lecture_session_masjid_id"`
-		LectureSessionCapacity               int        `json:"lecture_session_capacity"`
-		LectureSessionIsPublic               bool       `json:"lecture_session_is_public"`
-		LectureSessionIsRegistrationRequired bool       `json:"lecture_session_is_registration_required"`
-		LectureSessionIsPaid                 bool       `json:"lecture_session_is_paid"`
-		LectureSessionPrice                  *int       `json:"lecture_session_price,omitempty"`
-		LectureSessionPaymentDeadline        *time.Time `json:"lecture_session_payment_deadline,omitempty"`
-		LectureSessionCreatedAt              time.Time  `json:"lecture_session_created_at"`
+		LectureSessionID          string    `json:"lecture_session_id"`
+		LectureSessionTitle       string    `json:"lecture_session_title"`
+		LectureSessionDescription string    `json:"lecture_session_description"`
+		LectureSessionTeacherID   string    `json:"lecture_session_teacher_id"`
+		LectureSessionTeacherName string    `json:"lecture_session_teacher_name"`
+		LectureSessionStartTime   time.Time `json:"lecture_session_start_time"`
+		LectureSessionEndTime     time.Time `json:"lecture_session_end_time"`
+		LectureSessionPlace       string    `json:"lecture_session_place"`
+		LectureSessionLectureID   string    `json:"lecture_session_lecture_id"`
+		LectureSessionMasjidID    string    `json:"lecture_session_masjid_id"`
+		LectureSessionCreatedAt   time.Time `json:"lecture_session_created_at"`
 
 		UserLectureSessionAttendanceStatus *int       `json:"user_lecture_session_attendance_status,omitempty"`
 		UserLectureSessionGradeResult      *float64   `json:"user_lecture_session_grade_result,omitempty"`
-		UserLectureSessionIsRegistered     *bool      `json:"user_lecture_session_is_registered,omitempty"`
-		UserLectureSessionHasPaid          *bool      `json:"user_lecture_session_has_paid,omitempty"`
-		UserLectureSessionPaidAmount       *int       `json:"user_lecture_session_paid_amount,omitempty"`
-		UserLectureSessionPaymentTime      *time.Time `json:"user_lecture_session_payment_time,omitempty"`
-		UserLectureSessionCreatedAt        *time.Time `json:"user_lecture_session_user_session_created_at,omitempty"`
+		UserLectureSessionCreatedAt        *time.Time `json:"user_lecture_session_created_at,omitempty"`
 	}
 
 	var results []Result
@@ -167,31 +144,19 @@ func (ctrl *UserLectureSessionController) GetLectureSessionsWithUserProgress(c *
 			"ls.lecture_session_place",
 			"ls.lecture_session_lecture_id",
 			"l.lecture_masjid_id AS lecture_session_masjid_id",
-			"ls.lecture_session_capacity",
-			"ls.lecture_session_is_public",
-			"ls.lecture_session_is_registration_required",
-			"ls.lecture_session_is_paid",
-			"ls.lecture_session_price",
-			"ls.lecture_session_payment_deadline",
 			"ls.lecture_session_created_at",
 			"uls.user_lecture_session_attendance_status",
 			"uls.user_lecture_session_grade_result",
-			"uls.user_lecture_session_is_registered",
-			"uls.user_lecture_session_has_paid",
-			"uls.user_lecture_session_paid_amount",
-			"uls.user_lecture_session_payment_time",
 			"uls.user_lecture_session_created_at",
 		}).
 		Joins("LEFT JOIN lectures l ON l.lecture_id = ls.lecture_session_lecture_id").
 		Where("l.lecture_masjid_id = ?", masjidID).
 		Order("ls.lecture_session_start_time ASC")
 
-	// ✅ Tambahkan filter lecture_id jika ada
 	if lectureID != "" {
 		query = query.Where("ls.lecture_session_lecture_id = ?", lectureID)
 	}
 
-	// ✅ Join user progress jika login
 	if userID != "" {
 		query = query.Joins(`
 			LEFT JOIN user_lecture_sessions uls 
