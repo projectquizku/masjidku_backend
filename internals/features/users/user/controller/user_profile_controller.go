@@ -4,6 +4,7 @@ import (
 	"log"
 	"time"
 
+	"masjidku_backend/internals/features/users/user/dto"
 	"masjidku_backend/internals/features/users/user/model"
 	helper "masjidku_backend/internals/helpers"
 
@@ -29,7 +30,13 @@ func (upc *UsersProfileController) GetProfiles(c *fiber.Ctx) error {
 		return helper.Error(c, fiber.StatusInternalServerError, "Failed to fetch user profiles")
 	}
 
-	return helper.Success(c, "User profiles fetched successfully", profiles)
+	// Konversi ke DTO response
+	var responses []dto.UsersProfileResponse
+	for _, p := range profiles {
+		responses = append(responses, *dto.ToUsersProfileResponse(&p))
+	}
+
+	return helper.Success(c, "User profiles fetched successfully", responses)
 }
 
 func (upc *UsersProfileController) GetProfile(c *fiber.Ctx) error {
@@ -42,81 +49,218 @@ func (upc *UsersProfileController) GetProfile(c *fiber.Ctx) error {
 		return helper.Error(c, fiber.StatusNotFound, "User profile not found")
 	}
 
-	return helper.Success(c, "User profile fetched successfully", profile)
+	response := dto.ToUsersProfileResponse(&profile)
+	return helper.Success(c, "User profile fetched successfully", response)
 }
 
 func (upc *UsersProfileController) CreateProfile(c *fiber.Ctx) error {
 	log.Println("[INFO] Creating or updating user profile")
 
-	// Ambil user_id dari JWT
-	userID := c.Locals("user_id")
-	if userID == nil {
-		log.Println("[ERROR] user_id not found in context")
+	userIDRaw := c.Locals("user_id")
+	userIDStr, ok := userIDRaw.(string)
+	if !ok || userIDStr == "" {
+		log.Println("[ERROR] user_id not found or invalid in context")
 		return helper.Error(c, fiber.StatusUnauthorized, "Unauthorized: no user_id")
 	}
 
-	var input model.UsersProfileModel
-	if err := c.BodyParser(&input); err != nil {
-		log.Println("[ERROR] Invalid request body:", err)
-		return helper.Error(c, fiber.StatusBadRequest, "Invalid request format")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		log.Println("[ERROR] Invalid UUID format:", userIDStr)
+		return helper.Error(c, fiber.StatusUnauthorized, "Unauthorized: invalid user_id")
 	}
 
-	// Set user_id dari token ke model
-	input.UserID = userID.(uuid.UUID)
+	// Ambil semua field dari multipart/form
+	form, err := c.MultipartForm()
+	if err != nil {
+		log.Println("[ERROR] Gagal membaca multipart form:", err)
+		return helper.Error(c, fiber.StatusBadRequest, "Form tidak valid (multipart/form-data diperlukan)")
+	}
+	get := func(key string) string {
+		if form == nil || form.Value == nil || form.Value[key] == nil || len(form.Value[key]) == 0 {
+			return ""
+		}
+		return form.Value[key][0]
+	}
 
-	var existingProfile model.UsersProfileModel
-	result := upc.DB.Where("user_id = ?", input.UserID).First(&existingProfile)
+	// Parsing data form
+	donationName := get("donation_name")
+	fullName := get("full_name")
+	dateStr := get("date_of_birth")
+	genderStr := get("gender")
+	phone := get("phone_number")
+	bio := get("bio")
+	location := get("location")
+	occupation := get("occupation")
 
-	if result.RowsAffected > 0 {
-		if err := upc.DB.Model(&existingProfile).Updates(input).Error; err != nil {
+	// Parse date
+	var dateOfBirth *time.Time
+	if dateStr != "" {
+		if parsed, err := time.Parse("2006-01-02", dateStr); err == nil {
+			dateOfBirth = &parsed
+		}
+	}
+
+	// Parse gender
+	var gender *model.Gender
+	if genderStr != "" {
+		g := model.Gender(genderStr)
+		gender = &g
+	}
+
+	// Proses image
+	var imageURL *string
+	if fileHeaders, ok := form.File["image_url"]; ok && len(fileHeaders) > 0 {
+		file := fileHeaders[0]
+
+		// Hapus gambar lama jika ada
+		var old model.UsersProfileModel
+		if err := upc.DB.Where("user_id = ?", userID).First(&old).Error; err == nil && old.ImageURL != nil {
+			oldPath := helper.ExtractSupabaseStoragePath(*old.ImageURL)
+			if oldPath != "" {
+				_ = helper.DeleteFromSupabase("image", oldPath)
+			}
+		}
+
+		url, err := helper.UploadImageAsWebPToSupabase("users/profile_images", file)
+		if err != nil {
+			return helper.Error(c, fiber.StatusInternalServerError, "Gagal upload gambar")
+		}
+		imageURL = &url
+	} else if val := get("image_url"); val != "" {
+		imageURL = &val
+	}
+
+	// Siapkan model
+	profile := model.UsersProfileModel{
+		UserID:       userID,
+		DonationName: donationName,
+		FullName:     fullName,
+		DateOfBirth:  dateOfBirth,
+		Gender:       gender,
+		PhoneNumber:  phone,
+		Bio:          bio,
+		Location:     location,
+		Occupation:   occupation,
+		ImageURL:     imageURL,
+	}
+
+	var existing model.UsersProfileModel
+	tx := upc.DB.Where("user_id = ?", userID).First(&existing)
+
+	if tx.RowsAffected > 0 {
+		// Update profil lama
+		if err := upc.DB.Model(&existing).Updates(profile).Error; err != nil {
 			log.Println("[ERROR] Failed to update user profile:", err)
 			return helper.Error(c, fiber.StatusInternalServerError, "Failed to update user profile")
 		}
-		log.Println("[SUCCESS] User profile updated:", input.UserID)
-		return helper.Success(c, "User profile updated successfully", existingProfile)
+		log.Println("[SUCCESS] User profile updated:", userID)
+		return helper.Success(c, "User profile updated successfully", dto.ToUsersProfileResponse(&existing))
 	}
 
-	if err := upc.DB.Create(&input).Error; err != nil {
+	// Create profil baru
+	if err := upc.DB.Create(&profile).Error; err != nil {
 		log.Println("[ERROR] Failed to create user profile:", err)
 		return helper.Error(c, fiber.StatusInternalServerError, "Failed to create user profile")
 	}
 
-	log.Println("[SUCCESS] User profile created:", input.UserID)
-	return helper.SuccessWithCode(c, fiber.StatusCreated, "User profile created successfully", input)
+	log.Println("[SUCCESS] User profile created:", userID)
+	return helper.SuccessWithCode(c, fiber.StatusCreated, "User profile created successfully", dto.ToUsersProfileResponse(&profile))
 }
 
 func (upc *UsersProfileController) UpdateProfile(c *fiber.Ctx) error {
-	userID := c.Locals("user_id")
-	log.Println("[INFO] Updating user profile with user_id:", userID)
+	log.Println("[INFO] Updating user profile")
 
-	if userID == nil {
+	// ✅ Ambil user_id dari token (middleware)
+	userIDRaw := c.Locals("user_id")
+	userIDStr, ok := userIDRaw.(string)
+	if !ok || userIDStr == "" {
 		return helper.Error(c, fiber.StatusUnauthorized, "Unauthorized - user_id missing")
 	}
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return helper.Error(c, fiber.StatusUnauthorized, "Invalid user_id format")
+	}
 
+	// ✅ Cari profil
 	var profile model.UsersProfileModel
 	if err := upc.DB.Where("user_id = ?", userID).First(&profile).Error; err != nil {
 		log.Println("[ERROR] User profile not found:", err)
 		return helper.Error(c, fiber.StatusNotFound, "User profile not found")
 	}
 
-	var input map[string]interface{}
-	if err := c.BodyParser(&input); err != nil {
-		log.Println("[ERROR] Invalid request body:", err)
-		return helper.Error(c, fiber.StatusBadRequest, "Invalid request format")
+	// ✅ Ambil data dari multipart/form
+	form, err := c.MultipartForm()
+	if err != nil {
+		log.Println("[ERROR] Gagal membaca multipart form:", err)
+		return helper.Error(c, fiber.StatusBadRequest, "Form tidak valid (multipart/form-data diperlukan)")
+	}
+	get := func(key string) string {
+		if form == nil || form.Value == nil || form.Value[key] == nil || len(form.Value[key]) == 0 {
+			return ""
+		}
+		return form.Value[key][0]
 	}
 
-	// Jangan izinkan user_id diganti
-	delete(input, "user_id")
+	// ✅ Parsing form (semua opsional)
+	if val := get("donation_name"); val != "" {
+		profile.DonationName = val
+	}
+	if val := get("full_name"); val != "" {
+		profile.FullName = val
+	}
+	if val := get("date_of_birth"); val != "" {
+		if parsed, err := time.Parse("2006-01-02", val); err == nil {
+			profile.DateOfBirth = &parsed
+		}
+	}
+	if val := get("gender"); val != "" {
+		g := model.Gender(val)
+		profile.Gender = &g
+	}
+	if val := get("phone_number"); val != "" {
+		profile.PhoneNumber = val
+	}
+	if val := get("bio"); val != "" {
+		profile.Bio = val
+	}
+	if val := get("location"); val != "" {
+		profile.Location = val
+	}
+	if val := get("occupation"); val != "" {
+		profile.Occupation = val
+	}
 
-	// Tambahkan updated_at manual jika kamu pakai timestamp
-	input["updated_at"] = time.Now()
+	// ✅ Proses image (upload file atau string URL)
+	if files, ok := form.File["image_url"]; ok && len(files) > 0 {
+		file := files[0]
 
-	if err := upc.DB.Model(&profile).Updates(input).Error; err != nil {
+		// Hapus gambar lama jika ada
+		if profile.ImageURL != nil {
+			oldPath := helper.ExtractSupabaseStoragePath(*profile.ImageURL)
+			_ = helper.DeleteFromSupabase("image", oldPath)
+		}
+
+		url, err := helper.UploadImageAsWebPToSupabase("users/profile_images", file)
+		if err != nil {
+			return helper.Error(c, fiber.StatusInternalServerError, "Gagal upload gambar")
+		}
+		profile.ImageURL = &url
+	} else if val := get("image_url"); val != "" {
+		if profile.ImageURL != nil && *profile.ImageURL != val {
+			oldPath := helper.ExtractSupabaseStoragePath(*profile.ImageURL)
+			_ = helper.DeleteFromSupabase("image", oldPath)
+		}
+		profile.ImageURL = &val
+	}
+
+	// ✅ Simpan ke DB
+	if err := upc.DB.Save(&profile).Error; err != nil {
 		log.Println("[ERROR] Failed to update user profile:", err)
 		return helper.Error(c, fiber.StatusInternalServerError, "Failed to update user profile")
 	}
 
-	return helper.Success(c, "User profile updated successfully", profile)
+	log.Println("[SUCCESS] User profile updated:", userID)
+	return helper.Success(c, "User profile updated successfully", dto.ToUsersProfileResponse(&profile))
 }
 
 func (upc *UsersProfileController) DeleteProfile(c *fiber.Ctx) error {

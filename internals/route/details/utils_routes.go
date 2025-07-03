@@ -1,6 +1,7 @@
 package details
 
 import (
+	themaRoute "masjidku_backend/internals/features/utils/thema/route"
 	tooltipRoute "masjidku_backend/internals/features/utils/tooltips/route"
 
 	rateLimiter "masjidku_backend/internals/middlewares"
@@ -19,8 +20,10 @@ func UtilsRoutes(app *fiber.App, db *gorm.DB) {
 	// 🔐 Untuk admin/teacher/owner
 	adminGroup := api.Group("/a")
 	tooltipRoute.TooltipAdminRoutes(adminGroup, db)
+	themaRoute.ThemeAdminRoutes(adminGroup, db)
 
 	// ✅ Route non-auth / publik
 	publicGroup := app.Group("/api/n") // /n = no auth
 	tooltipRoute.TooltipPublicRoutes(publicGroup, db)
+	themaRoute.ThemePublicRoutes(publicGroup, db)
 }

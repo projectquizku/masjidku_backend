@@ -4,6 +4,7 @@ import (
 	"log"
 	"masjidku_backend/internals/features/masjids/events/dto"
 	"masjidku_backend/internals/features/masjids/events/model"
+	helper "masjidku_backend/internals/helpers"
 
 	"time"
 
@@ -21,49 +22,102 @@ func NewEventSessionController(db *gorm.DB) *EventSessionController {
 }
 
 // 🟢 POST /api/a/event-sessions
-// 🟢 POST /api/a/event-sessions
 func (ctrl *EventSessionController) CreateEventSession(c *fiber.Ctx) error {
-	// Ambil user_id dari token (middleware harus sudah set ini di Locals)
+	log.Println("[INFO] Menerima request untuk membuat sesi event")
+
+	// ✅ Ambil user_id dari token
 	userIDRaw := c.Locals("user_id")
 	userIDStr, ok := userIDRaw.(string)
 	if !ok || userIDStr == "" {
-		log.Println("[ERROR] Gagal mendapatkan user_id dari token")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "User tidak terautentikasi",
-		})
+		return fiber.NewError(fiber.StatusUnauthorized, "User tidak terautentikasi")
 	}
-
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		log.Printf("[ERROR] Gagal parsing user_id: %v", err)
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "User ID tidak valid",
-		})
+		return fiber.NewError(fiber.StatusUnauthorized, "User ID tidak valid")
 	}
 
-	var req dto.EventSessionRequest
-	if err := c.BodyParser(&req); err != nil {
-		log.Printf("[ERROR] Body parser gagal: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Permintaan tidak valid",
-			"error":   err.Error(),
-		})
+	// ✅ Ambil form values
+	get := func(key string) string {
+		return c.FormValue(key)
 	}
 
-	session := req.ToModel()
-	session.EventSessionCreatedBy = &userID // ✅ Set created_by dari token
+	title := get("event_session_title")
+	desc := get("event_session_description")
+	startStr := get("event_session_start_time")
+	endStr := get("event_session_end_time")
+	masjidIDStr := get("event_session_masjid_id")
+	eventIDStr := get("event_session_event_id")
 
-	if err := ctrl.DB.Create(session).Error; err != nil {
-		log.Printf("[ERROR] Gagal menyimpan event session: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Gagal menyimpan event session",
-			"error":   err.Error(),
-		})
+	// ✅ Validasi wajib
+	if title == "" || desc == "" || startStr == "" || endStr == "" || masjidIDStr == "" || eventIDStr == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Field wajib tidak lengkap")
 	}
 
-	return c.JSON(fiber.Map{
-		"message": "Event session berhasil dibuat",
-		"data":    dto.ToEventSessionResponse(session),
+	// ✅ Parsing waktu
+	startTime, err := time.Parse(time.RFC3339, startStr)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Format waktu mulai tidak valid (RFC3339)")
+	}
+	endTime, err := time.Parse(time.RFC3339, endStr)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Format waktu selesai tidak valid (RFC3339)")
+	}
+	if endTime.Before(startTime) {
+		return fiber.NewError(fiber.StatusBadRequest, "Waktu selesai harus setelah waktu mulai")
+	}
+
+	// ✅ Parsing UUID
+	masjidID, err := uuid.Parse(masjidIDStr)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Masjid ID tidak valid")
+	}
+	eventID, err := uuid.Parse(eventIDStr)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Event ID tidak valid")
+	}
+
+	// Opsional
+	location := get("event_session_location")
+
+	// ✅ Gambar
+	var imageURL *string
+	if file, err := c.FormFile("event_session_image_url"); err == nil && file != nil {
+		url, err := helper.UploadImageAsWebPToSupabase("event_sessions", file)
+		if err != nil {
+			log.Println("[ERROR] Gagal upload gambar:", err)
+			return fiber.NewError(fiber.StatusInternalServerError, "Gagal upload gambar sesi")
+		}
+		imageURL = &url
+	} else if val := get("event_session_image_url"); val != "" {
+		imageURL = &val
+	}
+
+	// ✅ Susun request DTO
+	req := dto.EventSessionRequest{
+		EventSessionEventID:     eventID,
+		EventSessionTitle:       title,
+		EventSessionDescription: desc,
+		EventSessionStartTime:   startTime,
+		EventSessionEndTime:     endTime,
+		EventSessionLocation:    location,
+		EventSessionImageURL:    "",
+		EventSessionMasjidID:    masjidID,
+		EventSessionCreatedBy:   &userID,
+	}
+	if imageURL != nil {
+		req.EventSessionImageURL = *imageURL
+	}
+
+	// ✅ Simpan ke DB
+	model := req.ToModel()
+	if err := ctrl.DB.Create(model).Error; err != nil {
+		log.Printf("[ERROR] Gagal menyimpan sesi event: %v", err)
+		return fiber.NewError(fiber.StatusInternalServerError, "Gagal menyimpan sesi event")
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message": "Sesi event berhasil dibuat",
+		"data":    dto.ToEventSessionResponse(model),
 	})
 }
 
@@ -87,8 +141,14 @@ func (ctrl *EventSessionController) GetEventSessionsByEvent(c *fiber.Ctx) error 
 		})
 	}
 
+	// 🔸 Local struct extend DTO
+	type ExtendedResponse struct {
+		dto.EventSessionResponse
+		EventSessionStatus string `json:"event_session_status"`
+	}
+
 	now := time.Now()
-	var result []dto.EventSessionResponse
+	var result []ExtendedResponse
 	for _, s := range sessions {
 		status := "upcoming"
 		if now.After(s.EventSessionStartTime) && now.Before(s.EventSessionEndTime) {
@@ -98,8 +158,10 @@ func (ctrl *EventSessionController) GetEventSessionsByEvent(c *fiber.Ctx) error 
 		}
 
 		resp := dto.ToEventSessionResponse(&s)
-		resp.EventSessionStatus = status
-		result = append(result, *resp)
+		result = append(result, ExtendedResponse{
+			EventSessionResponse: *resp,
+			EventSessionStatus:   status,
+		})
 	}
 
 	return c.JSON(fiber.Map{
@@ -119,8 +181,14 @@ func (ctrl *EventSessionController) GetAllEventSessions(c *fiber.Ctx) error {
 		})
 	}
 
+	// 🔸 Extend response dengan status
+	type ExtendedResponse struct {
+		dto.EventSessionResponse
+		EventSessionStatus string `json:"event_session_status"`
+	}
+
 	now := time.Now()
-	var result []dto.EventSessionResponse
+	var result []ExtendedResponse
 	for _, s := range sessions {
 		status := "upcoming"
 		if now.After(s.EventSessionStartTime) && now.Before(s.EventSessionEndTime) {
@@ -130,8 +198,10 @@ func (ctrl *EventSessionController) GetAllEventSessions(c *fiber.Ctx) error {
 		}
 
 		resp := dto.ToEventSessionResponse(&s)
-		resp.EventSessionStatus = status
-		result = append(result, *resp)
+		result = append(result, ExtendedResponse{
+			EventSessionResponse: *resp,
+			EventSessionStatus:   status,
+		})
 	}
 
 	return c.JSON(fiber.Map{
@@ -140,41 +210,14 @@ func (ctrl *EventSessionController) GetAllEventSessions(c *fiber.Ctx) error {
 	})
 }
 
+// 🟢 GET /api/u/event-sessions/upcoming/:masjid_id?
 func (ctrl *EventSessionController) GetUpcomingEventSessions(c *fiber.Ctx) error {
 	var sessions []model.EventSessionModel
 
-	// CATATAN PENTING UNTUK ROUTING DI FILE UTAMA (misal: main.go atau routes.go):
-	//
-	// Untuk menangani permintaan ke: /public/event-sessions/upcoming/masjid-id (TANPA ID)
-	// Anda HARUS menambahkan rute ini LEBIH DULU:
-	// ```go
-	// session.Get("/upcoming/masjid-id", func(c *fiber.Ctx) error {
-	//    // Ini akan terpicu jika URL adalah /public/event-sessions/upcoming/masjid-id
-	//    log.Printf("[WARNING] Request received for /upcoming/masjid-id without a specific ID. Returning Bad Request.")
-	//    return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	//        "message": "ID masjid diperlukan di URL path untuk endpoint ini.",
-	//        "error":   "Missing masjid_id in URL path",
-	//    })
-	// })
-	// ```
-	//
-	// DAN KEMUDIAN, rute Anda yang sudah ada untuk menangani permintaan DENGAN ID:
-	// ```go
-	// session.Get("/upcoming/masjid-id/:masjid_id", ctrl.GetUpcomingEventSessions)
-	// ```
-	//
-	// Perhatikan urutan definisi rute ini sangat krusial di Fiber.
-
-	// 1. Ambil masjid_id dari PATH parameter
-	// PERHATIKAN: Nama parameter di c.Params() HARUS SAMA dengan di definisi rute
-	masjidIDStr := c.Params("masjid_id") // Nama parameter harus cocok dengan definisi rute (:masjid_id)
-
-	// Inisialisasi builder kueri GORM
-	// Filter awal untuk sesi yang akan datang dan bersifat publik
+	masjidIDStr := c.Params("masjid_id")
 	query := ctrl.DB.
-		Where("event_session_start_time > ? AND event_session_is_public = ?", time.Now(), true)
+		Where("event_session_start_time > ?", time.Now())
 
-	// 2. Jika masjid_id ada (dari path), tambahkan filter ke kueri
 	if masjidIDStr != "" {
 		masjidID, err := uuid.Parse(masjidIDStr)
 		if err != nil {
@@ -184,30 +227,12 @@ func (ctrl *EventSessionController) GetUpcomingEventSessions(c *fiber.Ctx) error
 				"error":   "Invalid UUID format for masjid_id in path",
 			})
 		}
-		// Tambahkan filter berdasarkan event_session_masjid_id
 		query = query.Where("event_session_masjid_id = ?", masjidID)
 	} else {
-		// Log ini akan muncul jika GetUpcomingEventSessions dipanggil melalui rute tanpa parameter ID
-		// dan Flutter tidak mengirimkan ID di path.
-		// Jika ini terus muncul dan Anda ingin masjid_id selalu ada, pastikan Flutter mengirimkannya.
-		log.Printf("[INFO] GetUpcomingEventSessions dipanggil tanpa masjid_id di path. Mengambil semua event publik.")
+		log.Printf("[INFO] GetUpcomingEventSessions dipanggil tanpa masjid_id di path. Mengambil semua sesi.")
 	}
 
-	// Ambil query parameter 'order' (jika ada)
-	// Ini tetap query parameter dari URL seperti ?order=terbaru
-	order := c.Query("order")
-	if order != "" {
-		// Contoh logika untuk order, jika diperlukan
-		// if order == "terbaru" {
-		// 	query = query.Order("event_session_created_at DESC")
-		// }
-		// Untuk saat ini, kita biarkan Order("event_session_start_time ASC") sebagai default
-	}
-
-	// 3. Lanjutkan dengan order dan Find
-	if err := query.
-		Order("event_session_start_time ASC"). // Tetap urutkan berdasarkan waktu mulai
-		Find(&sessions).Error; err != nil {
+	if err := query.Order("event_session_start_time ASC").Find(&sessions).Error; err != nil {
 		log.Printf("[ERROR] Gagal mengambil sesi event upcoming: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Gagal mengambil sesi event upcoming",
@@ -215,9 +240,126 @@ func (ctrl *EventSessionController) GetUpcomingEventSessions(c *fiber.Ctx) error
 		})
 	}
 
-	// Mengembalikan respons JSON dengan data sesi event
 	return c.JSON(fiber.Map{
 		"message": "Berhasil mengambil sesi event yang akan datang",
-		"data":    dto.ToEventSessionResponseList(sessions), // Asumsi ini mengonversi ke DTO yang sesuai
+		"data":    dto.ToEventSessionResponseList(sessions),
+	})
+}
+
+// 🟡 PUT /api/a/event-sessions/:id
+func (ctrl *EventSessionController) UpdateEventSession(c *fiber.Ctx) error {
+	log.Println("[INFO] Menerima request untuk update sesi event")
+
+	id := c.Params("id")
+	if id == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "ID sesi event tidak valid")
+	}
+
+	var session model.EventSessionModel
+	if err := ctrl.DB.First(&session, "event_session_id = ?", id).Error; err != nil {
+		return fiber.NewError(fiber.StatusNotFound, "Sesi event tidak ditemukan")
+	}
+
+	get := func(key string) string { return c.FormValue(key) }
+
+	// Update field sesuai yang dikirim
+	if val := get("event_session_title"); val != "" {
+		session.EventSessionTitle = val
+	}
+	if val := get("event_session_description"); val != "" {
+		session.EventSessionDescription = val
+	}
+	if val := get("event_session_location"); val != "" {
+		session.EventSessionLocation = val
+	}
+
+	// Time
+	if val := get("event_session_start_time"); val != "" {
+		if t, err := time.Parse(time.RFC3339, val); err == nil {
+			session.EventSessionStartTime = t
+		}
+	}
+	if val := get("event_session_end_time"); val != "" {
+		if t, err := time.Parse(time.RFC3339, val); err == nil {
+			session.EventSessionEndTime = t
+		}
+	}
+
+	// Relasi
+	if val := get("event_session_event_id"); val != "" {
+		if uuidVal, err := uuid.Parse(val); err == nil {
+			session.EventSessionEventID = uuidVal
+		}
+	}
+	if val := get("event_session_masjid_id"); val != "" {
+		if uuidVal, err := uuid.Parse(val); err == nil {
+			session.EventSessionMasjidID = uuidVal
+		}
+	}
+
+	// ✅ Gambar: jika diganti, hapus yang lama
+	if file, err := c.FormFile("event_session_image_url"); err == nil && file != nil {
+		if session.EventSessionImageURL != "" {
+			oldPath := helper.ExtractSupabaseStoragePath(session.EventSessionImageURL)
+			_ = helper.DeleteFromSupabase("image", oldPath)
+		}
+		newURL, err := helper.UploadImageAsWebPToSupabase("event_sessions", file)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "Gagal upload gambar")
+		}
+		session.EventSessionImageURL = newURL
+	} else if val := get("event_session_image_url"); val != "" {
+		if val != session.EventSessionImageURL {
+			if session.EventSessionImageURL != "" {
+				oldPath := helper.ExtractSupabaseStoragePath(session.EventSessionImageURL)
+				_ = helper.DeleteFromSupabase("image", oldPath)
+			}
+			session.EventSessionImageURL = val
+		}
+	}
+
+	// Simpan perubahan
+	if err := ctrl.DB.Save(&session).Error; err != nil {
+		log.Println("[ERROR] Gagal update sesi event:", err)
+		return fiber.NewError(fiber.StatusInternalServerError, "Gagal update sesi event")
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Sesi event berhasil diperbarui",
+		"data":    dto.ToEventSessionResponse(&session),
+	})
+}
+
+// 🔴 DELETE /api/a/event-sessions/:id
+func (ctrl *EventSessionController) DeleteEventSession(c *fiber.Ctx) error {
+	log.Println("[INFO] Menerima request untuk menghapus sesi event")
+
+	id := c.Params("id")
+	if id == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "ID sesi event tidak valid")
+	}
+
+	var session model.EventSessionModel
+	if err := ctrl.DB.First(&session, "event_session_id = ?", id).Error; err != nil {
+		log.Printf("[ERROR] Sesi event tidak ditemukan: %v", err)
+		return fiber.NewError(fiber.StatusNotFound, "Sesi event tidak ditemukan")
+	}
+
+	// ✅ Hapus gambar dari Supabase jika ada
+	if session.EventSessionImageURL != "" {
+		oldPath := helper.ExtractSupabaseStoragePath(session.EventSessionImageURL)
+		if oldPath != "" {
+			_ = helper.DeleteFromSupabase("image", oldPath)
+		}
+	}
+
+	// ✅ Hapus dari database
+	if err := ctrl.DB.Delete(&session).Error; err != nil {
+		log.Printf("[ERROR] Gagal menghapus sesi event: %v", err)
+		return fiber.NewError(fiber.StatusInternalServerError, "Gagal menghapus sesi event")
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Sesi event berhasil dihapus",
 	})
 }

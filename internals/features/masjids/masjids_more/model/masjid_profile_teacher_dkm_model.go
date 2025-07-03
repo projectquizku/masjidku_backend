@@ -20,7 +20,6 @@ type MasjidProfileTeacherDkmModel struct {
 	MasjidProfileTeacherDkmRole      string              `gorm:"type:varchar(100);not null" json:"masjid_profile_teacher_dkm_role"`
 	MasjidProfileTeacherDkmDescription string            `gorm:"type:text" json:"masjid_profile_teacher_dkm_description"`
 	MasjidProfileTeacherDkmMessage   string              `gorm:"type:text" json:"masjid_profile_teacher_dkm_message"`
-	MasjidProfileTeacherDkmImageURL  string              `gorm:"type:text" json:"masjid_profile_teacher_dkm_image_url"`
 	MasjidProfileTeacherDkmCreatedAt time.Time           `gorm:"default:current_timestamp" json:"masjid_profile_teacher_dkm_created_at"`
 }
 

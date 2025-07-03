@@ -14,7 +14,6 @@ type MasjidProfileTeacherDkmRequest struct {
 	MasjidProfileTeacherDkmRole        string     `json:"masjid_profile_teacher_dkm_role"`
 	MasjidProfileTeacherDkmDescription string     `json:"masjid_profile_teacher_dkm_description"`
 	MasjidProfileTeacherDkmMessage     string     `json:"masjid_profile_teacher_dkm_message"`
-	MasjidProfileTeacherDkmImageURL    string     `json:"masjid_profile_teacher_dkm_image_url"`
 }
 
 type GetProfilesByMasjidRequest struct {
@@ -27,7 +26,6 @@ type MasjidProfileTeacherDkmResponse struct {
 	Role        string    `json:"role"`
 	Description string    `json:"description"`
 	Message     string    `json:"message"`
-	ImageURL    string    `json:"image_url"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 
@@ -36,7 +34,6 @@ func ToResponse(model *model.MasjidProfileTeacherDkmModel) MasjidProfileTeacherD
 		ID:          model.MasjidProfileTeacherDkmID,
 		Name:        model.MasjidProfileTeacherDkmName,
 		Role:        model.MasjidProfileTeacherDkmRole,
-		ImageURL:    model.MasjidProfileTeacherDkmImageURL,
 		Description: model.MasjidProfileTeacherDkmDescription,
 		Message:     model.MasjidProfileTeacherDkmMessage,
 	}
@@ -50,6 +47,5 @@ func (r *MasjidProfileTeacherDkmRequest) ToModel() *model.MasjidProfileTeacherDk
 		MasjidProfileTeacherDkmRole:        r.MasjidProfileTeacherDkmRole,
 		MasjidProfileTeacherDkmDescription: r.MasjidProfileTeacherDkmDescription,
 		MasjidProfileTeacherDkmMessage:     r.MasjidProfileTeacherDkmMessage,
-		MasjidProfileTeacherDkmImageURL:    r.MasjidProfileTeacherDkmImageURL,
 	}
 }

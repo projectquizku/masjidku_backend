@@ -24,17 +24,17 @@ type ArticleDTO struct {
 // ============================
 
 type CreateArticleRequest struct {
-	ArticleTitle       string `json:"article_title" validate:"required,min=3"`
-	ArticleDescription string `json:"article_description" validate:"required"`
-	ArticleImageURL    string `json:"article_image_url"`
-	ArticleOrderID     int    `json:"article_order_id"`
+	ArticleTitle       string `json:"article_title" form:"article_title" validate:"required,min=3"`
+	ArticleDescription string `json:"article_description" form:"article_description" validate:"required"`
+	ArticleImageURL    string `json:"article_image_url" form:"article_image_url"`
+	ArticleOrderID     int    `json:"article_order_id" form:"article_order_id"`
 }
 
 type UpdateArticleRequest struct {
-	ArticleTitle       string `json:"article_title" validate:"required,min=3"`
-	ArticleDescription string `json:"article_description" validate:"required"`
-	ArticleImageURL    string `json:"article_image_url"`
-	ArticleOrderID     int    `json:"article_order_id"`
+	ArticleTitle       string `json:"article_title" form:"article_title" validate:"omitempty,min=3"`
+	ArticleDescription string `json:"article_description" form:"article_description" validate:"omitempty"`
+	ArticleImageURL    string `json:"article_image_url" form:"article_image_url"`
+	ArticleOrderID     *int   `json:"article_order_id" form:"article_order_id"` // pointer agar bisa deteksi tidak dikirim
 }
 
 // ============================

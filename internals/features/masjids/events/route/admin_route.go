@@ -12,15 +12,21 @@ func EventRoutes(api fiber.Router, db *gorm.DB) {
 	eventCtrl := controller.NewEventController(db)
 	event := api.Group("/events")
 	event.Post("/", eventCtrl.CreateEvent)
+	event.Put("/:id", eventCtrl.UpdateEvent)
+	event.Delete("/:id", eventCtrl.DeleteEvent)
 	// event.Post("/by-masjid", eventCtrl.GetEventsByMasjid)
 
 	// 🔹 Event Sessions (admin can create)
 	sessionCtrl := controller.NewEventSessionController(db)
 	session := api.Group("/event-sessions")
 	session.Post("/", sessionCtrl.CreateEventSession)
+
 	session.Get("/all", sessionCtrl.GetAllEventSessions)
 	session.Get("/by-event/:event_id", sessionCtrl.GetEventSessionsByEvent)
 	session.Get("/upcoming", sessionCtrl.GetUpcomingEventSessions)
+
+	session.Put("/:id", sessionCtrl.UpdateEventSession)
+	session.Delete("/:id", sessionCtrl.DeleteEventSession)
 
 	// 🔹 User Event Registrations
 	registrationCtrl := controller.NewUserEventRegistrationController(db)

@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS masjid_profile_teacher_dkm (
     masjid_profile_teacher_dkm_role VARCHAR(100) NOT NULL,
     masjid_profile_teacher_dkm_description TEXT,
     masjid_profile_teacher_dkm_message TEXT,
-    masjid_profile_teacher_dkm_image_url TEXT,
     masjid_profile_teacher_dkm_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
