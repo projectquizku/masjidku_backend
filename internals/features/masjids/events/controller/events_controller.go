@@ -4,7 +4,6 @@ import (
 	"log"
 	"masjidku_backend/internals/features/masjids/events/dto"
 	"masjidku_backend/internals/features/masjids/events/model"
-	masjidModel "masjidku_backend/internals/features/masjids/masjids/model"
 	"strconv"
 	"strings"
 	"time"
@@ -37,7 +36,6 @@ func (ctrl *EventController) CreateEvent(c *fiber.Ctx) error {
 	// 🔸 Ambil field wajib
 	title := c.FormValue("event_title")
 	description := c.FormValue("event_description")
-	location := c.FormValue("event_location")
 	masjidIDStr := c.FormValue("event_masjid_id")
 
 	if title == "" || description == "" || masjidIDStr == "" {
@@ -48,15 +46,6 @@ func (ctrl *EventController) CreateEvent(c *fiber.Ctx) error {
 	masjidID, err := uuid.Parse(masjidIDStr)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "ID masjid tidak valid")
-	}
-
-	// 🔸 Fallback lokasi ke nama masjid
-	if location == "" {
-		var masjid masjidModel.MasjidModel
-		if err := ctrl.DB.First(&masjid, "masjid_id = ?", masjidID).Error; err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "Gagal mengambil nama masjid untuk lokasi")
-		}
-		location = masjid.MasjidName
 	}
 
 	// 🔸 Upload gambar jika ada
@@ -111,7 +100,6 @@ func (ctrl *EventController) CreateEvent(c *fiber.Ctx) error {
 	req := dto.EventRequest{
 		EventTitle:                  title,
 		EventDescription:            description,
-		EventLocation:               location,
 		EventImageURL:               imageURL,
 		EventCapacity:               capacity,
 		EventIsPublic:               isPublic,
@@ -224,9 +212,6 @@ func (ctrl *EventController) UpdateEvent(c *fiber.Ctx) error {
 	}
 	if desc := c.FormValue("event_description"); desc != "" {
 		existing.EventDescription = desc
-	}
-	if loc := c.FormValue("event_location"); loc != "" {
-		existing.EventLocation = loc
 	}
 	if masjidIDStr := c.FormValue("event_masjid_id"); masjidIDStr != "" {
 		if masjidID, err := uuid.Parse(masjidIDStr); err == nil {

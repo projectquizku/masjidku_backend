@@ -15,6 +15,7 @@ CREATE INDEX IF NOT EXISTS idx_lecture_sessions_materials_lecture_session_id ON 
 CREATE TABLE IF NOT EXISTS lecture_sessions_assets (
   lecture_sessions_asset_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   lecture_sessions_asset_title VARCHAR(255) NOT NULL,
+  lecture_sessions_asset_description TEXT,
   lecture_sessions_asset_file_url TEXT NOT NULL,
   lecture_sessions_asset_file_type INT NOT NULL, -- 1 = YouTube, 2 = PDF, 3 = DOCX, etc
   lecture_sessions_asset_lecture_session_id UUID NOT NULL REFERENCES lecture_sessions(lecture_session_id) ON DELETE CASCADE,

@@ -32,6 +32,7 @@ func (ctrl *LectureSessionsAssetController) CreateLectureSessionsAsset(c *fiber.
 
 	asset := model.LectureSessionsAssetModel{
 		LectureSessionsAssetTitle:            body.LectureSessionsAssetTitle,
+		LectureSessionsAssetDescription:      body.LectureSessionsAssetDescription,
 		LectureSessionsAssetFileURL:          body.LectureSessionsAssetFileURL,
 		LectureSessionsAssetFileType:         body.LectureSessionsAssetFileType,
 		LectureSessionsAssetLectureSessionID: body.LectureSessionsAssetLectureSessionID,

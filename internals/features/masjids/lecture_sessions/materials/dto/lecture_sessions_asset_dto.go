@@ -12,6 +12,7 @@ import (
 type LectureSessionsAssetDTO struct {
 	LectureSessionsAssetID               string    `json:"lecture_sessions_asset_id"`
 	LectureSessionsAssetTitle            string    `json:"lecture_sessions_asset_title"`
+	LectureSessionsAssetDescription      string    `json:"lecture_sessions_asset_description"` // NEW
 	LectureSessionsAssetFileURL          string    `json:"lecture_sessions_asset_file_url"`
 	LectureSessionsAssetFileType         int       `json:"lecture_sessions_asset_file_type"`
 	LectureSessionsAssetLectureSessionID string    `json:"lecture_sessions_asset_lecture_session_id"`
@@ -24,6 +25,7 @@ type LectureSessionsAssetDTO struct {
 
 type CreateLectureSessionsAssetRequest struct {
 	LectureSessionsAssetTitle            string `json:"lecture_sessions_asset_title" validate:"required,min=3"`
+	LectureSessionsAssetDescription      string `json:"lecture_sessions_asset_description"` // NEW (optional)
 	LectureSessionsAssetFileURL          string `json:"lecture_sessions_asset_file_url" validate:"required,url"`
 	LectureSessionsAssetFileType         int    `json:"lecture_sessions_asset_file_type" validate:"required"`
 	LectureSessionsAssetLectureSessionID string `json:"lecture_sessions_asset_lecture_session_id" validate:"required,uuid"`
@@ -37,6 +39,7 @@ func ToLectureSessionsAssetDTO(m model.LectureSessionsAssetModel) LectureSession
 	return LectureSessionsAssetDTO{
 		LectureSessionsAssetID:               m.LectureSessionsAssetID,
 		LectureSessionsAssetTitle:            m.LectureSessionsAssetTitle,
+		LectureSessionsAssetDescription:      m.LectureSessionsAssetDescription, // NEW
 		LectureSessionsAssetFileURL:          m.LectureSessionsAssetFileURL,
 		LectureSessionsAssetFileType:         m.LectureSessionsAssetFileType,
 		LectureSessionsAssetLectureSessionID: m.LectureSessionsAssetLectureSessionID,

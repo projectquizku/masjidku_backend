@@ -13,7 +13,6 @@ import (
 type EventRequest struct {
 	EventTitle                  string     `json:"event_title"`
 	EventDescription            string     `json:"event_description"`
-	EventLocation               string     `json:"event_location"`
 	EventImageURL               *string    `json:"event_image_url"`
 	EventCapacity               *int       `json:"event_capacity"`
 	EventIsPublic               bool       `json:"event_is_public"`
@@ -30,7 +29,6 @@ type EventResponse struct {
 	EventTitle                  string     `json:"event_title"`
 	EventSlug                   string     `json:"event_slug"`
 	EventDescription            string     `json:"event_description"`
-	EventLocation               string     `json:"event_location"`
 	EventImageURL               *string    `json:"event_image_url"`
 	EventCapacity               *int       `json:"event_capacity"`
 	EventIsPublic               bool       `json:"event_is_public"`
@@ -53,7 +51,6 @@ func (r *EventRequest) ToModel() *model.EventModel {
 		EventTitle:                  r.EventTitle,
 		EventSlug:                   generateSlug(r.EventTitle),
 		EventDescription:            r.EventDescription,
-		EventLocation:               r.EventLocation,
 		EventImageURL:               r.EventImageURL,
 		EventCapacity:               r.EventCapacity,
 		EventIsPublic:               r.EventIsPublic,
@@ -72,7 +69,6 @@ func ToEventResponse(m *model.EventModel) *EventResponse {
 		EventTitle:                  m.EventTitle,
 		EventSlug:                   m.EventSlug,
 		EventDescription:            m.EventDescription,
-		EventLocation:               m.EventLocation,
 		EventImageURL:               m.EventImageURL,
 		EventCapacity:               m.EventCapacity,
 		EventIsPublic:               m.EventIsPublic,

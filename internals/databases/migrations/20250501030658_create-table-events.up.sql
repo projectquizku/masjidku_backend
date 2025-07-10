@@ -3,7 +3,6 @@ CREATE TABLE IF NOT EXISTS events (
     event_title VARCHAR(255) NOT NULL,
     event_slug VARCHAR(100) NOT NULL,
     event_description TEXT,
-    event_location VARCHAR(255),
     event_image_url TEXT,
 
     -- Metadata utama

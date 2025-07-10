@@ -91,8 +91,6 @@ func (ctrl *LectureSessionsMaterialController) DeleteLectureSessionsMaterial(c *
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
-
-
 func (ctrl *LectureSessionsMaterialController) GetContentByLectureID(c *fiber.Ctx) error {
 	lectureID := c.Query("lecture_id")
 	if lectureID == "" {
@@ -140,13 +138,14 @@ func (ctrl *LectureSessionsMaterialController) GetContentByLectureID(c *fiber.Ct
 	}
 	for _, a := range assets {
 		content = append(content, map[string]interface{}{
-			"type":       "asset",
-			"id":         a.LectureSessionsAssetID,
-			"title":      a.LectureSessionsAssetTitle,
-			"file_url":   a.LectureSessionsAssetFileURL,
-			"file_type":  a.LectureSessionsAssetFileType,
-			"session_id": a.LectureSessionsAssetLectureSessionID,
-			"created_at": a.LectureSessionsAssetCreatedAt,
+			"type":        "asset",
+			"id":          a.LectureSessionsAssetID,
+			"title":       a.LectureSessionsAssetTitle,
+			"description": a.LectureSessionsAssetDescription,
+			"file_url":    a.LectureSessionsAssetFileURL,
+			"file_type":   a.LectureSessionsAssetFileType,
+			"session_id":  a.LectureSessionsAssetLectureSessionID,
+			"created_at":  a.LectureSessionsAssetCreatedAt,
 		})
 	}
 

@@ -70,6 +70,7 @@ func (ctrl *LectureSessionsContentController) GetContentByLectureID(c *fiber.Ctx
 			"type":            "asset",
 			"asset_id":        a.LectureSessionsAssetID,
 			"asset_title":     a.LectureSessionsAssetTitle,
+			"asset_description": a.LectureSessionsAssetDescription,
 			"asset_file_url":  a.LectureSessionsAssetFileURL,
 			"asset_file_type": a.LectureSessionsAssetFileType,
 			"session_id":      a.LectureSessionsAssetLectureSessionID,

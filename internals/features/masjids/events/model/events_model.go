@@ -13,7 +13,6 @@ type EventModel struct {
 	EventTitle                  string     `gorm:"column:event_title;type:varchar(255);not null" json:"event_title"`
 	EventSlug                   string     `gorm:"column:event_slug;type:varchar(100);not null" json:"event_slug"`
 	EventDescription            string     `gorm:"column:event_description;type:text" json:"event_description"`
-	EventLocation               string     `gorm:"column:event_location;type:varchar(255)" json:"event_location"`
 	EventImageURL               *string    `gorm:"column:event_image_url;type:text" json:"event_image_url"`
 	EventCapacity               *int       `gorm:"column:event_capacity" json:"event_capacity"`
 	EventIsPublic               bool       `gorm:"column:event_is_public;default:true" json:"event_is_public"`
